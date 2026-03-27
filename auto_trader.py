@@ -102,6 +102,16 @@ def is_market_open() -> bool:
     return market_open <= now_et <= market_close
 
 
+def _next_market_open(now_et: datetime) -> datetime:
+    """Calcola la prossima apertura del mercato (lun-ven 9:30 ET)."""
+    next_day = now_et + timedelta(days=1)
+    next_day = next_day.replace(hour=MARKET_OPEN_HOUR, minute=MARKET_OPEN_MIN, second=0, microsecond=0)
+    # Avanza fino a un giorno lavorativo
+    while next_day.weekday() >= 5:  # sab/dom
+        next_day += timedelta(days=1)
+    return next_day
+
+
 def time_until_market_close() -> timedelta:
     """Ritorna il tempo rimanente fino alla chiusura del mercato."""
     now_et = datetime.now(ET)
@@ -366,48 +376,35 @@ def main():
         # Controlla se il mercato è aperto
         if is_market_open():
             run_cycle(client, config, cycle_num, notifier)
+            # Pausa tra cicli durante il mercato aperto
+            remaining = time_until_market_close()
+            wait_time = min(CYCLE_INTERVAL_SECONDS, max(0, int(remaining.total_seconds())))
+            if wait_time > 0:
+                logger.info(
+                    f"Prossimo ciclo tra {wait_time // 60} minuti "
+                    f"({datetime.now(IT).strftime('%H:%M')} → "
+                    f"{(datetime.now(IT) + timedelta(seconds=wait_time)).strftime('%H:%M')} Italia)"
+                )
+                time.sleep(wait_time)
         else:
             now_et = datetime.now(ET)
             logger.info(
                 f"Mercato chiuso (ET: {now_et.strftime('%A %H:%M')}). "
                 f"In attesa..."
             )
-            # Se è weekend o dopo le 16, aspetta più a lungo
-            if now_et.weekday() >= 5:
-                logger.info("È weekend. Il bot si ferma.")
-                logger.info("Riepilogo finale:")
-                show_positions(client)
-                show_account(client)
-                break
 
-            # Se siamo dopo la chiusura di venerdì
-            if now_et.weekday() == 4 and now_et.hour >= MARKET_CLOSE_HOUR:
-                logger.info("Venerdì dopo la chiusura. Il bot si ferma.")
-                logger.info("Riepilogo finale:")
-                show_positions(client)
-                show_account(client)
-                break
+            # Calcola sleep fino a prossima apertura
+            next_open = _next_market_open(now_et)
+            sleep_secs = (next_open - now_et).total_seconds()
+            hours = int(sleep_secs // 3600)
+            mins = int((sleep_secs % 3600) // 60)
+            logger.info(f"Prossima apertura: {next_open.strftime('%A %d/%m %H:%M')} ET (tra {hours}h {mins}m)")
 
-        # Aspetta prima del prossimo ciclo
-        remaining = time_until_market_close()
-        if remaining.total_seconds() <= 0:
-            logger.info("Mercato chiuso per oggi.")
-            if datetime.now(ET).weekday() == 4:
-                logger.info("Fine settimana raggiunta. Stop.")
-                show_positions(client)
-                show_account(client)
-                break
-
-        wait_time = min(CYCLE_INTERVAL_SECONDS, max(0, int(remaining.total_seconds())))
-        if wait_time > 0:
-            logger.info(
-                f"Prossimo ciclo tra {wait_time // 60} minuti "
-                f"({datetime.now(IT).strftime('%H:%M')} → "
-                f"{(datetime.now(IT) + timedelta(seconds=wait_time)).strftime('%H:%M')} Italia)"
-            )
-            time.sleep(wait_time)
-        else:
-            break
+            # Sleep in blocchi da 5 minuti per poter reagire a segnali
+            while sleep_secs > 0:
+                chunk = min(300, sleep_secs)  # 5 minuti
+                time.sleep(chunk)
+                sleep_secs -= chunk
 
     logger.info("\n" + "=" * 60)
     logger.info("AUTO TRADER TERMINATO")
