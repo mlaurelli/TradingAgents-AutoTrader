@@ -3,255 +3,344 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TradingAgents Dashboard</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>TradingAgents</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+          }
+        }
+      }
+    </script>
     <style>
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-        }
-        .glass-morphism {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        .card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-        }
-        .positive { color: #10b981; }
-        .negative { color: #ef4444; }
-        .neutral { color: #6b7280; }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        .pulse {
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
+        * { -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: #0f0f1a; min-height: 100vh; }
+        .card { background: #1a1a2e; border: 1px solid #2a2a4a; }
+        .pos { color: #00e676; }
+        .neg { color: #ff5252; }
+        .badge-buy { background: rgba(0,230,118,.15); color: #00e676; }
+        .badge-sell { background: rgba(255,82,82,.15); color: #ff5252; }
+        .badge-hold { background: rgba(255,255,255,.1); color: #aaa; }
+        .badge-filled { background: rgba(0,230,118,.15); color: #00e676; }
+        .badge-new { background: rgba(66,165,245,.15); color: #42a5f5; }
+        .badge-cancelled { background: rgba(255,255,255,.1); color: #888; }
+        .ring-green { box-shadow: 0 0 0 3px rgba(0,230,118,.3); }
+        .ring-red { box-shadow: 0 0 0 3px rgba(255,82,82,.3); }
+        .glow-green { text-shadow: 0 0 20px rgba(0,230,118,.4); }
+        .glow-red { text-shadow: 0 0 20px rgba(255,82,82,.4); }
+        .bar-bg { background: #2a2a4a; }
+        .bar-fill-green { background: linear-gradient(90deg, #00e676, #69f0ae); }
+        .bar-fill-red { background: linear-gradient(90deg, #ff5252, #ff8a80); }
+        .bar-fill-blue { background: linear-gradient(90deg, #42a5f5, #90caf9); }
+        .bar-fill-purple { background: linear-gradient(90deg, #7c4dff, #b388ff); }
+        .status-dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
+        .dot-green { background:#00e676; box-shadow:0 0 6px #00e676; }
+        .dot-red { background:#ff5252; box-shadow:0 0 6px #ff5252; }
+        .dot-yellow { background:#ffd740; box-shadow:0 0 6px #ffd740; }
+        .fade-in { animation: fadeIn .3s ease; }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes pulse2 { 0%,100%{opacity:1} 50%{opacity:.5} }
+        .pulse2 { animation: pulse2 1.5s infinite; }
     </style>
 </head>
-<body class="p-4">
-    <!-- Header -->
-    <div class="glass-morphism rounded-2xl p-4 mb-4">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-                    <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-                    </svg>
-                </div>
-                <div>
-                    <h1 class="text-white font-bold text-lg">TradingAgents</h1>
-                    <p class="text-purple-100 text-xs">AI Trading Dashboard</p>
+<body class="text-white pb-20">
+
+<!-- Header -->
+<div class="sticky top-0 z-50 backdrop-blur-xl bg-[#0f0f1a]/80 border-b border-[#2a2a4a] px-4 py-3">
+    <div class="flex items-center justify-between max-w-lg mx-auto">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-sm font-bold">TradingAgents</h1>
+                <div class="flex items-center gap-1.5">
+                    <span class="status-dot {% if data.market.is_open %}dot-green{% else %}dot-red{% endif %}"></span>
+                    <span class="text-[10px] text-gray-400">{{ data.market.status_text }}</span>
                 </div>
             </div>
-            <div class="flex items-center space-x-2">
-                <button onclick="refreshData()" class="bg-white bg-opacity-20 text-white p-2 rounded-lg hover:bg-opacity-30 transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                    </svg>
-                </button>
-                <a href="/logout" class="bg-red-500 bg-opacity-20 text-white p-2 rounded-lg hover:bg-opacity-30 transition">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                    </svg>
-                </a>
+        </div>
+        <div class="flex items-center gap-2">
+            <button id="refreshBtn" onclick="refreshData()" class="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition">
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+            </button>
+            <a href="/logout" class="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition">
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                </svg>
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="max-w-lg mx-auto px-4 pt-4 space-y-4">
+
+    <!-- Hero: Portfolio Value -->
+    <div class="card rounded-2xl p-5 fade-in">
+        <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Portfolio Value</p>
+        <div class="flex items-end gap-3">
+            <span class="text-3xl font-extrabold tracking-tight">${{ "{:,.2f}".format(data.portfolio.value) }}</span>
+            <span class="text-sm font-semibold mb-1 {% if data.portfolio.performance_pct >= 0 %}pos glow-green{% else %}neg glow-red{% endif %}">
+                {% if data.portfolio.performance_pct >= 0 %}+{% endif %}{{ "%.2f"|format(data.portfolio.performance_pct) }}%
+            </span>
+        </div>
+        <p class="text-xs mt-1 {% if data.portfolio.performance_abs >= 0 %}pos{% else %}neg{% endif %}">
+            {% if data.portfolio.performance_abs >= 0 %}+{% endif %}${{ "{:,.2f}".format(data.portfolio.performance_abs) }} dal capitale iniziale (${{ "{:,.0f}".format(data.portfolio.initial_capital) }})
+        </p>
+
+        <!-- Exposure Bar -->
+        <div class="mt-4">
+            <div class="flex justify-between text-[10px] text-gray-500 mb-1">
+                <span>Investito {{ "%.1f"|format(data.portfolio.invested_pct) }}%</span>
+                <span>Cash {{ "%.1f"|format(data.portfolio.cash_pct) }}%</span>
+            </div>
+            <div class="bar-bg rounded-full h-2 overflow-hidden flex">
+                <div class="bar-fill-purple h-full" style="width:{{ data.portfolio.invested_pct }}%"></div>
             </div>
         </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="space-y-4">
-        <!-- Portfolio Overview -->
-        <div class="card rounded-2xl p-6 shadow-xl">
-            <h2 class="text-gray-800 font-bold text-lg mb-4">Portfolio Overview</h2>
-            
-            <div class="grid grid-cols-2 gap-4 mb-4">
-                <div class="text-center">
-                    <p class="text-gray-500 text-sm">Portfolio Value</p>
-                    <p class="text-2xl font-bold text-gray-800">${{ "%.2f"|format(data.portfolio.value) }}</p>
-                    <p class="text-sm {% if data.portfolio.performance_abs >= 0 %}positive{% else %}negative{% endif %}">
-                        {% if data.portfolio.performance_abs >= 0 %}+{% endif %}{{ "%.2f"|format(data.portfolio.performance_abs) }}
-                    </p>
-                </div>
-                <div class="text-center">
-                    <p class="text-gray-500 text-sm">Performance</p>
-                    <p class="text-2xl font-bold {% if data.portfolio.performance_pct >= 0 %}positive{% else %}negative{% endif %}">
-                        {% if data.portfolio.performance_pct >= 0 %}+{% endif %}{{ "%.2f"|format(data.portfolio.performance_pct) }}%
-                    </p>
-                    <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
-                        <div class="bg-gradient-to-r from-green-400 to-green-600 h-2 rounded-full" 
-                             style="width: {% if data.portfolio.performance_pct > 0 %}{{ min(data.portfolio.performance_pct * 5, 100) }}{% else %}0{% endif %}%"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-3 gap-2 text-center">
-                <div class="bg-gray-50 rounded-lg p-2">
-                    <p class="text-xs text-gray-500">Cash</p>
-                    <p class="text-sm font-semibold">${{ "%.2f"|format(data.portfolio.cash) }}</p>
-                </div>
-                <div class="bg-gray-50 rounded-lg p-2">
-                    <p class="text-xs text-gray-500">Buying Power</p>
-                    <p class="text-sm font-semibold">${{ "%.2f"|format(data.portfolio.buying_power) }}</p>
-                </div>
-                <div class="bg-gray-50 rounded-lg p-2">
-                    <p class="text-xs text-gray-500">Positions</p>
-                    <p class="text-sm font-semibold">{{ data.summary.total_positions }}</p>
-                </div>
-            </div>
+    <!-- Quick Stats Grid -->
+    <div class="grid grid-cols-4 gap-2 fade-in">
+        <div class="card rounded-xl p-3 text-center">
+            <p class="text-[10px] text-gray-500">Cash</p>
+            <p class="text-xs font-bold mt-0.5">${{ "{:,.0f}".format(data.portfolio.cash) }}</p>
         </div>
+        <div class="card rounded-xl p-3 text-center">
+            <p class="text-[10px] text-gray-500">Equity</p>
+            <p class="text-xs font-bold mt-0.5">${{ "{:,.0f}".format(data.portfolio.equity) }}</p>
+        </div>
+        <div class="card rounded-xl p-3 text-center">
+            <p class="text-[10px] text-gray-500">Buy Power</p>
+            <p class="text-xs font-bold mt-0.5">${{ "{:,.0f}".format(data.portfolio.buying_power) }}</p>
+        </div>
+        <div class="card rounded-xl p-3 text-center">
+            <p class="text-[10px] text-gray-500">Positions</p>
+            <p class="text-xs font-bold mt-0.5">{{ data.summary.total_positions }}</p>
+        </div>
+    </div>
 
-        <!-- Positions -->
-        <div class="card rounded-2xl p-6 shadow-xl">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-gray-800 font-bold text-lg">Positions</h2>
-                <span class="text-sm text-gray-500">{{ data.summary.total_positions }} active</span>
-            </div>
-            
-            {% if data.positions %}
-                <div class="space-y-3">
-                    {% for pos in data.positions %}
-                    <div class="border border-gray-200 rounded-lg p-3">
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="flex items-center space-x-2">
-                                <span class="font-bold text-gray-800">{{ pos.symbol }}</span>
-                                <span class="text-xs px-2 py-1 bg-gray-100 rounded">{{ pos.side }}</span>
-                            </div>
-                            <span class="text-sm {% if pos.pnl >= 0 %}positive{% else %}negative{% endif %}">
-                                {% if pos.pnl >= 0 %}+{% endif %}{{ "%.2f"|format(pos.pnl) }}
-                            </span>
-                        </div>
-                        <div class="grid grid-cols-3 gap-2 text-xs text-gray-600">
-                            <div>Qty: {{ pos.qty }}</div>
-                            <div>Avg: ${{ "%.2f"|format(pos.avg_entry_price) }}</div>
-                            <div>Now: ${{ "%.2f"|format(pos.current_price) }}</div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div class="text-center py-8 text-gray-500">
-                    <svg class="w-12 h-12 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
-                    </svg>
-                    <p>Nessuna posizione aperta</p>
-                </div>
+    <!-- Unrealized P&L -->
+    <div class="card rounded-2xl p-5 fade-in">
+        <div class="flex items-center justify-between mb-3">
+            <p class="text-xs text-gray-500 uppercase tracking-wider">Unrealized P&L</p>
+            {% if data.summary.total_positions > 0 %}
+            <span class="text-[10px] px-2 py-0.5 rounded-full {% if data.summary.winners >= data.summary.losers %}badge-buy{% else %}badge-sell{% endif %}">
+                {{ data.summary.winners }}W / {{ data.summary.losers }}L
+            </span>
             {% endif %}
         </div>
-
-        <!-- Recent Orders -->
-        {% if data.orders %}
-        <div class="card rounded-2xl p-6 shadow-xl">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-gray-800 font-bold text-lg">Recent Orders</h2>
-                <span class="text-sm text-gray-500">{{ data.summary.today_orders }} today</span>
+        <p class="text-2xl font-bold {% if data.summary.total_unrealized >= 0 %}pos{% else %}neg{% endif %}">
+            {% if data.summary.total_unrealized >= 0 %}+{% endif %}${{ "{:,.2f}".format(data.summary.total_unrealized) }}
+        </p>
+        {% if data.summary.best %}
+        <div class="grid grid-cols-2 gap-2 mt-3">
+            <div class="bg-green-500/5 border border-green-500/20 rounded-lg p-2">
+                <p class="text-[10px] text-gray-500">Best</p>
+                <p class="text-xs font-bold pos">{{ data.summary.best.symbol }} +${{ "%.2f"|format(data.summary.best.pnl) }}</p>
             </div>
-            
-            <div class="space-y-2">
-                {% for order in data.orders[:5] %}
-                <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
-                    <div class="flex items-center space-x-2">
-                        <span class="font-medium text-sm">{{ order.symbol }}</span>
-                        <span class="text-xs px-2 py-1 {% if order.side == 'buy' %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %} rounded">
-                            {{ order.side.upper() }}
-                        </span>
-                        <span class="text-xs text-gray-500">{{ order.qty }}</span>
-                    </div>
-                    <div class="text-right">
-                        <span class="text-xs {% if order.status == 'filled' %}positive{% elif order.status == 'cancelled' %}negative{% else %}neutral{% endif %}">
-                            {{ order.status.title() }}
-                        </span>
-                    </div>
-                </div>
-                {% endfor %}
+            <div class="bg-red-500/5 border border-red-500/20 rounded-lg p-2">
+                <p class="text-[10px] text-gray-500">Worst</p>
+                <p class="text-xs font-bold neg">{{ data.summary.worst.symbol }} ${{ "%.2f"|format(data.summary.worst.pnl) }}</p>
             </div>
         </div>
         {% endif %}
+    </div>
 
-        <!-- Summary Stats -->
-        <div class="card rounded-2xl p-6 shadow-xl">
-            <h2 class="text-gray-800 font-bold text-lg mb-4">Today's Summary</h2>
-            <div class="grid grid-cols-2 gap-4">
-                <div class="text-center">
-                    <p class="text-gray-500 text-sm">Total P&L</p>
-                    <p class="text-lg font-bold {% if data.summary.total_pnl >= 0 %}positive{% else %}negative{% endif %}">
-                        {% if data.summary.total_pnl >= 0 %}+{% endif %}{{ "%.2f"|format(data.summary.total_pnl) }}
-                    </p>
+    <!-- Positions -->
+    <div class="card rounded-2xl p-5 fade-in">
+        <p class="text-xs text-gray-500 uppercase tracking-wider mb-3">Open Positions</p>
+        {% if data.positions %}
+        <div class="space-y-3">
+            {% for pos in data.positions %}
+            <div class="bg-white/[.03] rounded-xl p-3 {% if pos.pnl >= 0 %}ring-green{% else %}ring-red{% endif %}">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-sm">{{ pos.symbol }}</span>
+                        <span class="text-[10px] px-1.5 py-0.5 rounded {% if pos.side == 'long' %}badge-buy{% else %}badge-sell{% endif %}">{{ pos.side }}</span>
+                        <span class="text-[10px] text-gray-500">{{ "%.1f"|format(pos.weight) }}%</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-sm font-bold {% if pos.pnl >= 0 %}pos{% else %}neg{% endif %}">
+                            {% if pos.pnl >= 0 %}+{% endif %}${{ "%.2f"|format(pos.pnl) }}
+                        </span>
+                        <span class="text-[10px] ml-1 {% if pos.pnl_pct >= 0 %}pos{% else %}neg{% endif %}">
+                            ({% if pos.pnl_pct >= 0 %}+{% endif %}{{ "%.1f"|format(pos.pnl_pct) }}%)
+                        </span>
+                    </div>
                 </div>
-                <div class="text-center">
-                    <p class="text-gray-500 text-sm">Active Orders</p>
-                    <p class="text-lg font-bold text-gray-800">{{ data.summary.active_orders }}</p>
+                <div class="grid grid-cols-4 gap-1 mt-2 text-[10px] text-gray-500">
+                    <div>Qty <span class="text-white font-medium">{{ pos.qty }}</span></div>
+                    <div>Entry <span class="text-white font-medium">${{ "%.2f"|format(pos.avg_entry_price) }}</span></div>
+                    <div>Now <span class="text-white font-medium">${{ "%.2f"|format(pos.current_price) }}</span></div>
+                    <div>Today <span class="font-medium {% if pos.change_today >= 0 %}pos{% else %}neg{% endif %}">{% if pos.change_today >= 0 %}+{% endif %}{{ "%.1f"|format(pos.change_today) }}%</span></div>
                 </div>
+                <!-- P&L bar -->
+                <div class="bar-bg rounded-full h-1 mt-2 overflow-hidden">
+                    {% if pos.pnl_pct >= 0 %}
+                    <div class="bar-fill-green h-full" style="width:{{ [pos.pnl_pct * 5, 100] | min }}%"></div>
+                    {% else %}
+                    <div class="bar-fill-red h-full" style="width:{{ [pos.pnl_pct | abs * 5, 100] | min }}%"></div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-8">
+            <p class="text-gray-600 text-sm">Nessuna posizione aperta</p>
+            <p class="text-gray-700 text-xs mt-1">Il bot aprira posizioni all'apertura dei mercati</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Today's Activity -->
+    <div class="card rounded-2xl p-5 fade-in">
+        <div class="flex items-center justify-between mb-3">
+            <p class="text-xs text-gray-500 uppercase tracking-wider">Today's Activity</p>
+            <span class="text-[10px] text-gray-500">{{ data.summary.today_orders }} ordini</span>
+        </div>
+        <div class="grid grid-cols-3 gap-2 mb-3">
+            <div class="text-center bg-white/[.03] rounded-lg p-2">
+                <p class="text-[10px] text-gray-500">Filled</p>
+                <p class="text-sm font-bold pos">{{ data.summary.filled_today }}</p>
+            </div>
+            <div class="text-center bg-white/[.03] rounded-lg p-2">
+                <p class="text-[10px] text-gray-500">Pending</p>
+                <p class="text-sm font-bold text-blue-400">{{ data.summary.today_orders - data.summary.filled_today - data.summary.cancelled_today }}</p>
+            </div>
+            <div class="text-center bg-white/[.03] rounded-lg p-2">
+                <p class="text-[10px] text-gray-500">Cancelled</p>
+                <p class="text-sm font-bold text-gray-500">{{ data.summary.cancelled_today }}</p>
+            </div>
+        </div>
+        {% if data.today_orders %}
+        <div class="space-y-1.5">
+            {% for o in data.today_orders[:8] %}
+            <div class="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-medium">{{ o.symbol }}</span>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded {% if o.side == 'buy' %}badge-buy{% else %}badge-sell{% endif %}">{{ o.side }}</span>
+                    <span class="text-[10px] text-gray-500">x{{ o.qty }}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    {% if o.filled_avg_price %}<span class="text-[10px] text-gray-400">${{ "%.2f"|format(o.filled_avg_price) }}</span>{% endif %}
+                    <span class="text-[10px] px-1.5 py-0.5 rounded badge-{{ o.status }}">{{ o.status }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-center text-gray-600 text-xs py-2">Nessun ordine oggi</p>
+        {% endif %}
+    </div>
+
+    <!-- Recent Fills -->
+    {% if data.recent_fills %}
+    <div class="card rounded-2xl p-5 fade-in">
+        <p class="text-xs text-gray-500 uppercase tracking-wider mb-3">Recent Fills</p>
+        <div class="space-y-1.5">
+            {% for f in data.recent_fills %}
+            <div class="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-medium">{{ f.symbol }}</span>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded {% if f.side == 'buy' %}badge-buy{% else %}badge-sell{% endif %}">{{ f.side }}</span>
+                    <span class="text-[10px] text-gray-500">x{{ f.qty }}</span>
+                </div>
+                <div class="text-right">
+                    <span class="text-[10px] text-white font-medium">${{ "%.2f"|format(f.price) }}</span>
+                    <p class="text-[9px] text-gray-600">{{ f.timestamp }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Bot Status -->
+    <div class="card rounded-2xl p-5 fade-in">
+        <p class="text-xs text-gray-500 uppercase tracking-wider mb-3">Bot Status</p>
+        <div class="grid grid-cols-2 gap-3">
+            <div class="bg-white/[.03] rounded-lg p-3">
+                <p class="text-[10px] text-gray-500">Model</p>
+                <p class="text-xs font-bold text-purple-400">{{ data.bot.model }}</p>
+            </div>
+            <div class="bg-white/[.03] rounded-lg p-3">
+                <p class="text-[10px] text-gray-500">Cycle</p>
+                <p class="text-xs font-bold">Every {{ data.bot.cycle_min }}m</p>
+            </div>
+        </div>
+        <div class="mt-3 bg-white/[.03] rounded-lg p-3">
+            <p class="text-[10px] text-gray-500 mb-1">Tickers</p>
+            <div class="flex flex-wrap gap-1.5">
+                {% for t in data.bot.tickers %}
+                <span class="text-[10px] px-2 py-0.5 bg-purple-500/10 text-purple-300 rounded-full font-medium">{{ t }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="mt-3 bg-white/[.03] rounded-lg p-3">
+            <p class="text-[10px] text-gray-500 mb-1">Last Log</p>
+            <p class="text-[10px] text-gray-400 font-mono break-all">{{ data.bot.last_log }}</p>
+        </div>
+    </div>
+
+    <!-- Market Info -->
+    <div class="card rounded-2xl p-5 fade-in">
+        <p class="text-xs text-gray-500 uppercase tracking-wider mb-3">Market</p>
+        <div class="grid grid-cols-3 gap-2">
+            <div class="text-center">
+                <p class="text-[10px] text-gray-500">Status</p>
+                <div class="flex items-center justify-center gap-1 mt-1">
+                    <span class="status-dot {% if data.market.is_open %}dot-green{% else %}dot-red{% endif %}"></span>
+                    <span class="text-xs font-medium">{% if data.market.is_open %}Open{% else %}Closed{% endif %}</span>
+                </div>
+            </div>
+            <div class="text-center">
+                <p class="text-[10px] text-gray-500">New York</p>
+                <p class="text-xs font-bold mt-1">{{ data.market.time_et }}</p>
+            </div>
+            <div class="text-center">
+                <p class="text-[10px] text-gray-500">Italia</p>
+                <p class="text-xs font-bold mt-1">{{ data.market.time_it }}</p>
             </div>
         </div>
     </div>
 
-    <!-- Last Update -->
-    <div class="text-center mt-4">
-        <p class="text-purple-100 text-xs">
-            Last update: {{ data.timestamp[:19] }} 
-            <span id="refresh-status" class="ml-2"></span>
-        </p>
-    </div>
+</div>
 
-    <script>
-        let refreshInterval;
-        
-        function updateRefreshStatus(status) {
-            const element = document.getElementById('refresh-status');
-            if (status === 'loading') {
-                element.innerHTML = '<span class="pulse">🔄</span>';
-            } else if (status === 'success') {
-                element.innerHTML = '✅';
-                setTimeout(() => element.innerHTML = '', 2000);
-            } else if (status === 'error') {
-                element.innerHTML = '❌';
-                setTimeout(() => element.innerHTML = '', 3000);
-            }
+<!-- Footer -->
+<div class="text-center py-4 mt-2">
+    <p class="text-[10px] text-gray-700">Last update: {{ data.timestamp }} <span id="refresh-status"></span></p>
+    <p class="text-[9px] text-gray-800 mt-0.5">Auto-refresh 30s</p>
+</div>
+
+<script>
+async function refreshData() {
+    const btn = document.getElementById('refreshBtn');
+    const st = document.getElementById('refresh-status');
+    btn.classList.add('animate-spin');
+    st.textContent = '...';
+    try {
+        const r = await fetch('/api/refresh');
+        if (r.ok) {
+            const d = await r.json();
+            if (d.success) { st.textContent = ''; location.reload(); return; }
         }
-        
-        async function refreshData() {
-            updateRefreshStatus('loading');
-            try {
-                const response = await fetch('/api/refresh', {
-                    method: 'GET',
-                    headers: {
-                        'Cache-Control': 'no-cache'
-                    }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.success) {
-                        updateRefreshStatus('success');
-                        // Update page content without reload
-                        setTimeout(() => location.reload(), 1000);
-                    } else {
-                        updateRefreshStatus('error');
-                    }
-                } else {
-                    updateRefreshStatus('error');
-                }
-            } catch (error) {
-                updateRefreshStatus('error');
-            }
-        }
-        
-        // Auto-refresh every 30 seconds
-        refreshInterval = setInterval(() => {
-            refreshData();
-        }, 30000);
-        
-        // Clean up on page unload
-        window.addEventListener('beforeunload', () => {
-            if (refreshInterval) {
-                clearInterval(refreshInterval);
-            }
-        });
-    </script>
+        st.textContent = 'err';
+    } catch(e) { st.textContent = 'err'; }
+    btn.classList.remove('animate-spin');
+}
+setInterval(refreshData, 30000);
+</script>
 </body>
 </html>

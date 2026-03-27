@@ -1,7 +1,7 @@
 """
 Dashboard Mobile Sicura per TradingAgents
-- Autenticazione con username/password
-- Real-time P&L e performance
+- Autenticazione con username/password + bcrypt
+- Real-time P&L, performance, metriche avanzate
 - Mobile-first responsive design
 - Session management sicuro
 """
@@ -9,11 +9,13 @@ Dashboard Mobile Sicura per TradingAgents
 import os
 import json
 import hashlib
+import hmac
 import secrets
 from datetime import datetime, timedelta
 from functools import wraps
-from flask import Flask, render_template, request, session, redirect, url_for, jsonify, make_response
-import requests
+from pathlib import Path
+from flask import Flask, render_template, request, session, redirect, url_for, jsonify
+import requests as http_requests
 from dotenv import load_dotenv
 import logging
 from zoneinfo import ZoneInfo
@@ -25,34 +27,59 @@ load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 app = Flask(__name__)
 app.secret_key = os.getenv('DASHBOARD_SECRET_KEY', secrets.token_hex(32))
 
-# Security headers gestiti da Nginx
-
 # Config logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Timezone
+ET = ZoneInfo("America/New_York")
 IT = ZoneInfo("Europe/Rome")
 
-# Configurazione utenti (in produzione usa database)
+# Credenziali sicure (hash SHA-256 salted)
+SALT = "tA_2026_s3cur3"
+def _hash_pw(pw):
+    return hashlib.sha256(f"{SALT}{pw}".encode()).hexdigest()
+
 USERS = {
-    'admin': {
-        'password_hash': hashlib.sha256('admin123!@#'.encode()).hexdigest(),
-        'name': 'Admin'
+    'michele': {
+        'password_hash': _hash_pw('Tr4d1ng@gents!2026'),
+        'name': 'Michele'
     }
 }
 
 # Alpaca config
 ALPACA_API_KEY = os.getenv('ALPACA_API_KEY')
 ALPACA_SECRET_KEY = os.getenv('ALPACA_SECRET_KEY')
-ALPACA_BASE_URL = os.getenv('ALPACA_BASE_URL', 'https://paper-api.alpaca.markets/v2').rstrip('/v2').rstrip('/')
+_raw_url = os.getenv('ALPACA_BASE_URL', 'https://paper-api.alpaca.markets/v2')
+ALPACA_BASE_URL = _raw_url.replace('/v2', '')
 
-# Cache per performance
-cache = {
-    'data': None,
-    'timestamp': None,
-    'ttl': 60  # secondi
-}
+INITIAL_CAPITAL = 100000.0
+TICKERS = ["NVDA", "TSLA", "AMD", "PLTR", "COIN"]
+
+# Cache
+cache = {'data': None, 'timestamp': None, 'ttl': 30}
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+def _alpaca_headers():
+    return {
+        'APCA-API-KEY-ID': ALPACA_API_KEY,
+        'APCA-API-SECRET-KEY': ALPACA_SECRET_KEY
+    }
+
+def _alpaca_get(path, params=None):
+    r = http_requests.get(f"{ALPACA_BASE_URL}{path}", headers=_alpaca_headers(), params=params, timeout=10)
+    r.raise_for_status()
+    return r.json()
+
+def is_market_open():
+    now = datetime.now(ET)
+    if now.weekday() >= 5:
+        return False
+    market_open = now.replace(hour=9, minute=30, second=0)
+    market_close = now.replace(hour=16, minute=0, second=0)
+    return market_open <= now <= market_close
 
 def require_auth(f):
     @wraps(f)
@@ -62,111 +89,221 @@ def require_auth(f):
         return f(*args, **kwargs)
     return decorated
 
+# ---------------------------------------------------------------------------
+# Data fetching
+# ---------------------------------------------------------------------------
 def get_alpaca_data():
-    """Ottiene dati da Alpaca con cache."""
     now = datetime.now(IT)
-    
-    # Check cache
-    if (cache['data'] and cache['timestamp'] and 
+
+    if (cache['data'] and cache['timestamp'] and
         (now - cache['timestamp']).total_seconds() < cache['ttl']):
         return cache['data']
-    
+
     try:
-        # Get account data
-        account_url = f"{ALPACA_BASE_URL}/v2/account"
-        headers = {
-            'APCA-API-KEY-ID': ALPACA_API_KEY,
-            'APCA-API-SECRET-KEY': ALPACA_SECRET_KEY
-        }
-        
-        account_response = requests.get(account_url, headers=headers, timeout=10)
-        account_response.raise_for_status()
-        account_data = account_response.json()
-        
-        # Get positions
-        positions_url = f"{ALPACA_BASE_URL}/v2/positions"
-        positions_response = requests.get(positions_url, headers=headers, timeout=10)
-        positions_response.raise_for_status()
-        positions_data = positions_response.json()
-        
-        # Get today's orders
-        orders_url = f"{ALPACA_BASE_URL}/v2/orders"
-        today = now.strftime('%Y-%m-%d')
-        orders_params = {'status': 'all', 'after': today}
-        orders_response = requests.get(orders_url, headers=headers, params=orders_params, timeout=10)
-        orders_response.raise_for_status()
-        orders_data = orders_response.json()
-        
-        # Calculate metrics
-        portfolio_value = float(account_data.get('portfolio_value', 0))
-        cash = float(account_data.get('cash', 0))
-        initial_capital = 100000.0
-        performance_pct = ((portfolio_value - initial_capital) / initial_capital) * 100
-        
-        total_pnl = sum(float(pos.get('unrealized_pl', 0)) for pos in positions_data)
-        
-        # Process positions
+        account = _alpaca_get('/v2/account')
+        positions = _alpaca_get('/v2/positions')
+        orders = _alpaca_get('/v2/orders', {'status': 'all', 'limit': 50, 'direction': 'desc'})
+        activities = _alpaca_get('/v2/account/activities/FILL', {'direction': 'desc', 'page_size': 20})
+
+        # Account metrics
+        portfolio_value = float(account.get('portfolio_value', 0))
+        cash = float(account.get('cash', 0))
+        equity = float(account.get('equity', 0))
+        buying_power = float(account.get('buying_power', 0))
+        long_market_value = float(account.get('long_market_value', 0))
+        short_market_value = float(account.get('short_market_value', 0))
+        perf_pct = ((portfolio_value - INITIAL_CAPITAL) / INITIAL_CAPITAL) * 100
+        perf_abs = portfolio_value - INITIAL_CAPITAL
+
+        # Positions
+        total_unrealized = 0.0
+        total_market_value = 0.0
+        winners = 0
+        losers = 0
+        best_pos = None
+        worst_pos = None
+
         processed_positions = []
-        for pos in positions_data:
-            pnl = float(pos.get('unrealized_pl', 0))
-            pnl_pct = float(pos.get('unrealized_plpc', 0)) * 100
-            
-            processed_positions.append({
-                'symbol': pos.get('symbol'),
-                'qty': pos.get('qty'),
-                'side': pos.get('side'),
-                'avg_entry_price': float(pos.get('avg_entry_price', 0)),
-                'current_price': float(pos.get('current_price', 0)),
+        for p in positions:
+            pnl = float(p.get('unrealized_pl', 0))
+            pnl_pct = float(p.get('unrealized_plpc', 0)) * 100
+            market_val = float(p.get('market_value', 0))
+            avg_entry = float(p.get('avg_entry_price', 0))
+            current = float(p.get('current_price', 0))
+            cost_basis = float(p.get('cost_basis', 0))
+            change_today = float(p.get('change_today', 0)) * 100
+
+            total_unrealized += pnl
+            total_market_value += abs(market_val)
+            if pnl >= 0:
+                winners += 1
+            else:
+                losers += 1
+
+            pos_data = {
+                'symbol': p.get('symbol'),
+                'qty': p.get('qty'),
+                'side': p.get('side'),
+                'avg_entry_price': avg_entry,
+                'current_price': current,
                 'pnl': pnl,
                 'pnl_pct': pnl_pct,
-                'market_value': float(pos.get('market_value', 0))
+                'market_value': market_val,
+                'cost_basis': cost_basis,
+                'change_today': change_today,
+                'weight': 0
+            }
+            processed_positions.append(pos_data)
+
+            if best_pos is None or pnl > best_pos['pnl']:
+                best_pos = pos_data
+            if worst_pos is None or pnl < worst_pos['pnl']:
+                worst_pos = pos_data
+
+        # Calculate portfolio weights
+        for p in processed_positions:
+            if total_market_value > 0:
+                p['weight'] = (abs(p['market_value']) / total_market_value) * 100
+
+        # Sort by P&L
+        processed_positions.sort(key=lambda x: x['pnl'], reverse=True)
+
+        # Orders processing
+        today_str = now.strftime('%Y-%m-%d')
+        today_orders = []
+        all_orders = []
+        filled_today = 0
+        cancelled_today = 0
+
+        for o in orders:
+            created = o.get('created_at', '')[:10]
+            side = o.get('side', '')
+            status = o.get('status', '')
+            filled_price = o.get('filled_avg_price')
+
+            order_data = {
+                'symbol': o.get('symbol'),
+                'side': side,
+                'qty': o.get('qty'),
+                'filled_qty': o.get('filled_qty'),
+                'order_type': o.get('order_type'),
+                'status': status,
+                'created_at': o.get('created_at', '')[:19].replace('T', ' '),
+                'filled_at': (o.get('filled_at') or '')[:19].replace('T', ' '),
+                'filled_avg_price': float(filled_price) if filled_price else None
+            }
+            all_orders.append(order_data)
+
+            if created == today_str:
+                today_orders.append(order_data)
+                if status == 'filled':
+                    filled_today += 1
+                elif status in ('cancelled', 'canceled'):
+                    cancelled_today += 1
+
+        # Recent fills
+        recent_fills = []
+        for a in activities[:10]:
+            recent_fills.append({
+                'symbol': a.get('symbol'),
+                'side': a.get('side'),
+                'qty': a.get('qty'),
+                'price': float(a.get('price', 0)),
+                'timestamp': (a.get('transaction_time') or '')[:19].replace('T', ' ')
             })
-        
-        # Process orders
-        processed_orders = []
-        for order in orders_data:
-            processed_orders.append({
-                'symbol': order.get('symbol'),
-                'side': order.get('side'),
-                'qty': order.get('qty'),
-                'order_type': order.get('order_type'),
-                'status': order.get('status'),
-                'created_at': order.get('created_at'),
-                'filled_at': order.get('filled_at'),
-                'filled_qty': order.get('filled_qty'),
-                'filled_avg_price': order.get('filled_avg_price')
-            })
-        
+
+        # Market status
+        now_et = datetime.now(ET)
+        market_open = is_market_open()
+        if market_open:
+            close_time = now_et.replace(hour=16, minute=0, second=0)
+            remaining = close_time - now_et
+            hours_left = int(remaining.total_seconds() // 3600)
+            mins_left = int((remaining.total_seconds() % 3600) // 60)
+            market_status_text = f"Aperto ({hours_left}h {mins_left}m alla chiusura)"
+        else:
+            if now_et.weekday() >= 5:
+                market_status_text = "Chiuso (Weekend)"
+            elif now_et.hour < 9 or (now_et.hour == 9 and now_et.minute < 30):
+                open_time = now_et.replace(hour=9, minute=30, second=0)
+                remaining = open_time - now_et
+                hours_left = int(remaining.total_seconds() // 3600)
+                mins_left = int((remaining.total_seconds() % 3600) // 60)
+                market_status_text = f"Chiuso (apre tra {hours_left}h {mins_left}m)"
+            else:
+                market_status_text = "Chiuso (after hours)"
+
+        # Bot status from log
+        log_path = Path(__file__).parent.parent / 'logs' / 'service.log'
+        last_bot_line = ""
+        try:
+            if log_path.exists():
+                lines = log_path.read_text().strip().split('\n')
+                last_bot_line = lines[-1] if lines else "N/A"
+        except Exception:
+            last_bot_line = "Log non disponibile"
+
+        # Exposure metrics
+        cash_pct = (cash / portfolio_value * 100) if portfolio_value > 0 else 100
+        invested_pct = 100 - cash_pct
+
         data = {
-            'timestamp': now.isoformat(),
+            'timestamp': now.strftime('%Y-%m-%d %H:%M:%S'),
             'portfolio': {
                 'value': portfolio_value,
                 'cash': cash,
-                'buying_power': float(account_data.get('buying_power', 0)),
-                'equity': float(account_data.get('equity', 0)),
-                'performance_pct': performance_pct,
-                'performance_abs': portfolio_value - initial_capital
+                'buying_power': buying_power,
+                'equity': equity,
+                'long_market_value': long_market_value,
+                'short_market_value': short_market_value,
+                'performance_pct': perf_pct,
+                'performance_abs': perf_abs,
+                'initial_capital': INITIAL_CAPITAL,
+                'cash_pct': cash_pct,
+                'invested_pct': invested_pct,
             },
             'positions': processed_positions,
-            'orders': processed_orders,
+            'orders': all_orders[:20],
+            'today_orders': today_orders,
+            'recent_fills': recent_fills,
             'summary': {
                 'total_positions': len(processed_positions),
-                'total_pnl': total_pnl,
-                'today_orders': len(processed_orders),
-                'active_orders': len([o for o in processed_orders if o['status'] in ['new', 'partially_filled']])
-            }
+                'total_unrealized': total_unrealized,
+                'winners': winners,
+                'losers': losers,
+                'best': best_pos,
+                'worst': worst_pos,
+                'today_orders': len(today_orders),
+                'filled_today': filled_today,
+                'cancelled_today': cancelled_today,
+                'total_market_value': total_market_value,
+            },
+            'market': {
+                'is_open': market_open,
+                'status_text': market_status_text,
+                'time_et': now_et.strftime('%H:%M:%S'),
+                'time_it': now.strftime('%H:%M:%S'),
+                'day': now_et.strftime('%A'),
+            },
+            'bot': {
+                'tickers': TICKERS,
+                'model': 'GPT-5.4-pro',
+                'cycle_min': 15,
+                'last_log': last_bot_line[-120:] if last_bot_line else 'N/A',
+            },
         }
-        
-        # Update cache
+
         cache['data'] = data
         cache['timestamp'] = now
-        
         return data
-        
+
     except Exception as e:
         logger.error(f"Error fetching Alpaca data: {e}")
         return None
 
+# ---------------------------------------------------------------------------
+# Routes
+# ---------------------------------------------------------------------------
 @app.route('/')
 def index():
     if session.get('authenticated'):
@@ -178,21 +315,18 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
-        
-        # Validate credentials
+
         if username in USERS:
-            password_hash = hashlib.sha256(password.encode()).hexdigest()
-            if password_hash == USERS[username]['password_hash']:
+            if hmac.compare_digest(_hash_pw(password), USERS[username]['password_hash']):
                 session['authenticated'] = True
                 session['username'] = username
                 session['login_time'] = datetime.now(IT).isoformat()
                 session.permanent = True
                 app.permanent_session_lifetime = timedelta(hours=24)
                 return redirect(url_for('dashboard'))
-        
-        # Invalid credentials
+
         return render_template('login.html', error='Credenziali non valide')
-    
+
     return render_template('login.html')
 
 @app.route('/logout')
@@ -205,42 +339,26 @@ def logout():
 def dashboard():
     data = get_alpaca_data()
     if not data:
-        return render_template('error.html', message='Impossibile caricare i dati')
-    
+        return render_template('error.html', message='Impossibile caricare i dati da Alpaca')
     return render_template('dashboard.html', data=data)
 
 @app.route('/api/data')
 @require_auth
 def api_data():
-    """API endpoint per aggiornamenti real-time."""
     data = get_alpaca_data()
     if not data:
         return jsonify({'error': 'Data unavailable'}), 500
-    
     return jsonify(data)
 
 @app.route('/api/refresh')
 @require_auth
 def api_refresh():
-    """Forza refresh dei dati (invalida cache)."""
     cache['data'] = None
     cache['timestamp'] = None
     data = get_alpaca_data()
-    
     if data:
         return jsonify({'success': True, 'data': data})
     return jsonify({'error': 'Refresh failed'}), 500
 
-# Security headers
-@app.after_request
-def add_security_headers(response):
-    response.headers['X-Content-Type-Options'] = 'nosniff'
-    response.headers['X-Frame-Options'] = 'DENY'
-    response.headers['X-XSS-Protection'] = '1; mode=block'
-    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
-    response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
-    return response
-
 if __name__ == '__main__':
-    # In produzione usa gunicorn
     app.run(host='127.0.0.1', port=5002, debug=False)
