@@ -18,7 +18,8 @@ from dotenv import load_dotenv
 import logging
 from zoneinfo import ZoneInfo
 
-load_dotenv()
+# Carica .env dalla root del progetto
+load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 # Configurazione security
 app = Flask(__name__)
