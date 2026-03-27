@@ -13,7 +13,6 @@ import secrets
 from datetime import datetime, timedelta
 from functools import wraps
 from flask import Flask, render_template, request, session, redirect, url_for, jsonify, make_response
-from flask_talisman import Talisman
 import requests
 from dotenv import load_dotenv
 import logging
@@ -25,8 +24,7 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv('DASHBOARD_SECRET_KEY', secrets.token_hex(32))
 
-# Security headers
-Talisman(app, force_https=True)
+# Security headers gestiti da Nginx
 
 # Config logging
 logging.basicConfig(level=logging.INFO)
@@ -244,4 +242,4 @@ def add_security_headers(response):
 
 if __name__ == '__main__':
     # In produzione usa gunicorn
-    app.run(host='0.0.0.0', port=5000, ssl_context='adhoc')
+    app.run(host='127.0.0.1', port=5002, debug=False)
