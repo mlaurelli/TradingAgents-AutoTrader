@@ -332,11 +332,10 @@ def main():
     # Config TradingAgents (ottimizzata con GPT-5.4-pro)
     config = DEFAULT_CONFIG.copy()
     config["llm_provider"] = "openai"
-    config["deep_think_llm"] = "gpt-5.4-pro"  # Modello top per analisi complesse
-    config["quick_think_llm"] = "gpt-5.4-pro"  # Stesso modello per consistenza massima
-    config["openai_reasoning_effort"] = "high"  # Massimo sforzo di ragionamento
-    config["max_debate_rounds"] = 3  # Massimo dibattito tra analisti
-    config["max_risk_discuss_rounds"] = 3  # Massima discussione sul rischio
+    config["deep_think_llm"] = "gpt-5.4"  # Veloce come 4o, più intelligente
+    config["quick_think_llm"] = "gpt-5.4"  # Stesso modello per consistenza
+    config["max_debate_rounds"] = 1  # Snello per velocità
+    config["max_risk_discuss_rounds"] = 1  # Snello per velocità
 
     # Connetti Alpaca
     client = get_alpaca_client()
