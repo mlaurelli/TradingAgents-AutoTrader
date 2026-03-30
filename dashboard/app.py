@@ -350,11 +350,15 @@ def get_alpaca_data():
         # Next market open
         next_open_str = ''
         if not market_open:
-            next_day = now_et + timedelta(days=1)
-            next_day = next_day.replace(hour=9, minute=30, second=0, microsecond=0)
-            while next_day.weekday() >= 5:
-                next_day += timedelta(days=1)
-            next_open_str = next_day.strftime('%A %d/%m %H:%M ET')
+            # Se siamo prima delle 9:30 in un giorno feriale, apre oggi
+            candidate = now_et.replace(hour=9, minute=30, second=0, microsecond=0)
+            if now_et.weekday() < 5 and now_et < candidate:
+                pass  # candidate is today
+            else:
+                candidate = (now_et + timedelta(days=1)).replace(hour=9, minute=30, second=0, microsecond=0)
+                while candidate.weekday() >= 5:
+                    candidate += timedelta(days=1)
+            next_open_str = candidate.strftime('%A %d/%m %H:%M ET')
 
         # Exposure metrics
         cash_pct = (cash / portfolio_value * 100) if portfolio_value > 0 else 100
