@@ -20,39 +20,40 @@
     </script>
     <style>
         * { -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Inter', system-ui, sans-serif; background: #0f0f1a; min-height: 100vh; }
-        .card { background: #1a1a2e; border: 1px solid #2a2a4a; }
-        .pos { color: #00e676; }
-        .neg { color: #ff5252; }
-        .badge-buy { background: rgba(0,230,118,.15); color: #00e676; }
-        .badge-sell { background: rgba(255,82,82,.15); color: #ff5252; }
-        .badge-hold { background: rgba(255,255,255,.1); color: #aaa; }
-        .badge-filled { background: rgba(0,230,118,.15); color: #00e676; }
-        .badge-new { background: rgba(66,165,245,.15); color: #42a5f5; }
-        .badge-cancelled { background: rgba(255,255,255,.1); color: #888; }
-        .ring-green { box-shadow: 0 0 0 3px rgba(0,230,118,.3); }
-        .ring-red { box-shadow: 0 0 0 3px rgba(255,82,82,.3); }
-        .glow-green { text-shadow: 0 0 20px rgba(0,230,118,.4); }
-        .glow-red { text-shadow: 0 0 20px rgba(255,82,82,.4); }
-        .bar-bg { background: #2a2a4a; }
-        .bar-fill-green { background: linear-gradient(90deg, #00e676, #69f0ae); }
-        .bar-fill-red { background: linear-gradient(90deg, #ff5252, #ff8a80); }
-        .bar-fill-blue { background: linear-gradient(90deg, #42a5f5, #90caf9); }
-        .bar-fill-purple { background: linear-gradient(90deg, #7c4dff, #b388ff); }
+        body { font-family: 'Inter', system-ui, sans-serif; background: #f5f5f7; min-height: 100vh; }
+        .card { background: #fff; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+        .pos { color: #16a34a; }
+        .neg { color: #dc2626; }
+        .badge-buy { background: #dcfce7; color: #16a34a; }
+        .badge-sell { background: #fee2e2; color: #dc2626; }
+        .badge-hold { background: #f3f4f6; color: #6b7280; }
+        .badge-filled { background: #dcfce7; color: #16a34a; }
+        .badge-new { background: #dbeafe; color: #2563eb; }
+        .badge-cancelled { background: #f3f4f6; color: #9ca3af; }
+        .ring-green { box-shadow: 0 0 0 2px #bbf7d0; }
+        .ring-red { box-shadow: 0 0 0 2px #fecaca; }
+        .glow-green { }
+        .glow-red { }
+        .bar-bg { background: #e5e7eb; }
+        .bar-fill-green { background: linear-gradient(90deg, #22c55e, #86efac); }
+        .bar-fill-red { background: linear-gradient(90deg, #ef4444, #fca5a5); }
+        .bar-fill-blue { background: linear-gradient(90deg, #3b82f6, #93c5fd); }
+        .bar-fill-purple { background: linear-gradient(90deg, #7c3aed, #c4b5fd); }
         .status-dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
-        .dot-green { background:#00e676; box-shadow:0 0 6px #00e676; }
-        .dot-red { background:#ff5252; box-shadow:0 0 6px #ff5252; }
-        .dot-yellow { background:#ffd740; box-shadow:0 0 6px #ffd740; }
+        .dot-green { background:#22c55e; box-shadow:0 0 6px rgba(34,197,94,.4); }
+        .dot-red { background:#ef4444; box-shadow:0 0 6px rgba(239,68,68,.4); }
+        .dot-yellow { background:#eab308; box-shadow:0 0 6px rgba(234,179,8,.4); }
         .fade-in { animation: fadeIn .3s ease; }
         @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
         @keyframes pulse2 { 0%,100%{opacity:1} 50%{opacity:.5} }
         .pulse2 { animation: pulse2 1.5s infinite; }
+        .sub { color: #6b7280; }
     </style>
 </head>
-<body class="text-white pb-20">
+<body class="text-gray-900 pb-20">
 
 <!-- Header -->
-<div class="sticky top-0 z-50 backdrop-blur-xl bg-[#0f0f1a]/80 border-b border-[#2a2a4a] px-4 py-3">
+<div class="sticky top-0 z-50 backdrop-blur-xl bg-white/80 border-b border-gray-200 px-4 py-3">
     <div class="flex items-center justify-between max-w-lg mx-auto">
         <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
@@ -64,18 +65,18 @@
                 <h1 class="text-sm font-bold">TradingAgents</h1>
                 <div class="flex items-center gap-1.5">
                     <span class="status-dot {% if data.market.is_open %}dot-green{% else %}dot-red{% endif %}"></span>
-                    <span class="text-[10px] text-gray-400">{{ data.market.status_text }}</span>
+                    <span class="text-[10px] text-gray-500">{{ data.market.status_text }}</span>
                 </div>
             </div>
         </div>
         <div class="flex items-center gap-2">
-            <button id="refreshBtn" onclick="refreshData()" class="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition">
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button id="refreshBtn" onclick="refreshData()" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition">
+                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                 </svg>
             </button>
-            <a href="/logout" class="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition">
-                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <a href="/logout" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition">
+                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                 </svg>
             </a>
@@ -145,11 +146,11 @@
         </p>
         {% if data.summary.best %}
         <div class="grid grid-cols-2 gap-2 mt-3">
-            <div class="bg-green-500/5 border border-green-500/20 rounded-lg p-2">
+            <div class="bg-green-50 border border-green-200 rounded-lg p-2">
                 <p class="text-[10px] text-gray-500">Best</p>
                 <p class="text-xs font-bold pos">{{ data.summary.best.symbol }} +${{ "%.2f"|format(data.summary.best.pnl) }}</p>
             </div>
-            <div class="bg-red-500/5 border border-red-500/20 rounded-lg p-2">
+            <div class="bg-red-50 border border-red-200 rounded-lg p-2">
                 <p class="text-[10px] text-gray-500">Worst</p>
                 <p class="text-xs font-bold neg">{{ data.summary.worst.symbol }} ${{ "%.2f"|format(data.summary.worst.pnl) }}</p>
             </div>
@@ -163,7 +164,7 @@
         {% if data.positions %}
         <div class="space-y-3">
             {% for pos in data.positions %}
-            <div class="bg-white/[.03] rounded-xl p-3 {% if pos.pnl >= 0 %}ring-green{% else %}ring-red{% endif %}">
+            <div class="bg-gray-50 rounded-xl p-3 {% if pos.pnl >= 0 %}ring-green{% else %}ring-red{% endif %}">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
                         <span class="font-bold text-sm">{{ pos.symbol }}</span>
@@ -180,9 +181,9 @@
                     </div>
                 </div>
                 <div class="grid grid-cols-4 gap-1 mt-2 text-[10px] text-gray-500">
-                    <div>Qty <span class="text-white font-medium">{{ pos.qty }}</span></div>
-                    <div>Entry <span class="text-white font-medium">${{ "%.2f"|format(pos.avg_entry_price) }}</span></div>
-                    <div>Now <span class="text-white font-medium">${{ "%.2f"|format(pos.current_price) }}</span></div>
+                    <div>Qty <span class="text-gray-900 font-medium">{{ pos.qty }}</span></div>
+                    <div>Entry <span class="text-gray-900 font-medium">${{ "%.2f"|format(pos.avg_entry_price) }}</span></div>
+                    <div>Now <span class="text-gray-900 font-medium">${{ "%.2f"|format(pos.current_price) }}</span></div>
                     <div>Today <span class="font-medium {% if pos.change_today >= 0 %}pos{% else %}neg{% endif %}">{% if pos.change_today >= 0 %}+{% endif %}{{ "%.1f"|format(pos.change_today) }}%</span></div>
                 </div>
                 <!-- P&L bar -->
@@ -198,8 +199,8 @@
         </div>
         {% else %}
         <div class="text-center py-8">
-            <p class="text-gray-600 text-sm">Nessuna posizione aperta</p>
-            <p class="text-gray-700 text-xs mt-1">Il bot aprira posizioni all'apertura dei mercati</p>
+            <p class="text-gray-400 text-sm">Nessuna posizione aperta</p>
+            <p class="text-gray-400 text-xs mt-1">Il bot aprira posizioni all'apertura dei mercati</p>
         </div>
         {% endif %}
     </div>
@@ -211,23 +212,23 @@
             <span class="text-[10px] text-gray-500">{{ data.summary.today_orders }} ordini</span>
         </div>
         <div class="grid grid-cols-3 gap-2 mb-3">
-            <div class="text-center bg-white/[.03] rounded-lg p-2">
+            <div class="text-center bg-gray-50 rounded-lg p-2">
                 <p class="text-[10px] text-gray-500">Filled</p>
                 <p class="text-sm font-bold pos">{{ data.summary.filled_today }}</p>
             </div>
-            <div class="text-center bg-white/[.03] rounded-lg p-2">
+            <div class="text-center bg-gray-50 rounded-lg p-2">
                 <p class="text-[10px] text-gray-500">Pending</p>
-                <p class="text-sm font-bold text-blue-400">{{ data.summary.today_orders - data.summary.filled_today - data.summary.cancelled_today }}</p>
+                <p class="text-sm font-bold text-blue-600">{{ data.summary.today_orders - data.summary.filled_today - data.summary.cancelled_today }}</p>
             </div>
-            <div class="text-center bg-white/[.03] rounded-lg p-2">
+            <div class="text-center bg-gray-50 rounded-lg p-2">
                 <p class="text-[10px] text-gray-500">Cancelled</p>
-                <p class="text-sm font-bold text-gray-500">{{ data.summary.cancelled_today }}</p>
+                <p class="text-sm font-bold text-gray-400">{{ data.summary.cancelled_today }}</p>
             </div>
         </div>
         {% if data.today_orders %}
         <div class="space-y-1.5">
             {% for o in data.today_orders[:8] %}
-            <div class="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0">
+            <div class="flex items-center justify-between py-1.5 border-b border-gray-100 last:border-0">
                 <div class="flex items-center gap-2">
                     <span class="text-xs font-medium">{{ o.symbol }}</span>
                     <span class="text-[10px] px-1.5 py-0.5 rounded {% if o.side == 'buy' %}badge-buy{% else %}badge-sell{% endif %}">{{ o.side }}</span>
@@ -241,7 +242,7 @@
             {% endfor %}
         </div>
         {% else %}
-        <p class="text-center text-gray-600 text-xs py-2">Nessun ordine oggi</p>
+        <p class="text-center text-gray-400 text-xs py-2">Nessun ordine oggi</p>
         {% endif %}
     </div>
 
@@ -251,14 +252,14 @@
         <p class="text-xs text-gray-500 uppercase tracking-wider mb-3">Recent Fills</p>
         <div class="space-y-1.5">
             {% for f in data.recent_fills %}
-            <div class="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0">
+            <div class="flex items-center justify-between py-1.5 border-b border-gray-100 last:border-0">
                 <div class="flex items-center gap-2">
                     <span class="text-xs font-medium">{{ f.symbol }}</span>
                     <span class="text-[10px] px-1.5 py-0.5 rounded {% if f.side == 'buy' %}badge-buy{% else %}badge-sell{% endif %}">{{ f.side }}</span>
                     <span class="text-[10px] text-gray-500">x{{ f.qty }}</span>
                 </div>
                 <div class="text-right">
-                    <span class="text-[10px] text-white font-medium">${{ "%.2f"|format(f.price) }}</span>
+                    <span class="text-[10px] text-gray-900 font-medium">${{ "%.2f"|format(f.price) }}</span>
                     <p class="text-[9px] text-gray-600">{{ f.timestamp }}</p>
                 </div>
             </div>
@@ -271,26 +272,26 @@
     <div class="card rounded-2xl p-5 fade-in">
         <p class="text-xs text-gray-500 uppercase tracking-wider mb-3">Bot Status</p>
         <div class="grid grid-cols-2 gap-3">
-            <div class="bg-white/[.03] rounded-lg p-3">
+            <div class="bg-gray-50 rounded-lg p-3">
                 <p class="text-[10px] text-gray-500">Model</p>
-                <p class="text-xs font-bold text-purple-400">{{ data.bot.model }}</p>
+                <p class="text-xs font-bold text-purple-600">{{ data.bot.model }}</p>
             </div>
-            <div class="bg-white/[.03] rounded-lg p-3">
+            <div class="bg-gray-50 rounded-lg p-3">
                 <p class="text-[10px] text-gray-500">Cycle</p>
                 <p class="text-xs font-bold">Every {{ data.bot.cycle_min }}m</p>
             </div>
         </div>
-        <div class="mt-3 bg-white/[.03] rounded-lg p-3">
+        <div class="mt-3 bg-gray-50 rounded-lg p-3">
             <p class="text-[10px] text-gray-500 mb-1">Tickers</p>
             <div class="flex flex-wrap gap-1.5">
                 {% for t in data.bot.tickers %}
-                <span class="text-[10px] px-2 py-0.5 bg-purple-500/10 text-purple-300 rounded-full font-medium">{{ t }}</span>
+                <span class="text-[10px] px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full font-medium">{{ t }}</span>
                 {% endfor %}
             </div>
         </div>
-        <div class="mt-3 bg-white/[.03] rounded-lg p-3">
+        <div class="mt-3 bg-gray-50 rounded-lg p-3">
             <p class="text-[10px] text-gray-500 mb-1">Last Log</p>
-            <p class="text-[10px] text-gray-400 font-mono break-all">{{ data.bot.last_log }}</p>
+            <p class="text-[10px] text-gray-600 font-mono break-all">{{ data.bot.last_log }}</p>
         </div>
     </div>
 
@@ -320,8 +321,8 @@
 
 <!-- Footer -->
 <div class="text-center py-4 mt-2">
-    <p class="text-[10px] text-gray-700">Last update: {{ data.timestamp }} <span id="refresh-status"></span></p>
-    <p class="text-[9px] text-gray-800 mt-0.5">Auto-refresh 30s</p>
+    <p class="text-[10px] text-gray-400">Last update: {{ data.timestamp }} <span id="refresh-status"></span></p>
+    <p class="text-[9px] text-gray-400 mt-0.5">Auto-refresh 30s</p>
 </div>
 
 <script>
