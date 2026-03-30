@@ -236,12 +236,125 @@ def get_alpaca_data():
         # Bot status from log
         log_path = Path(__file__).parent.parent / 'logs' / 'service.log'
         last_bot_line = ""
+        recent_log_lines = []
+        bot_running = False
+        bot_sleeping = False
+        current_analysis = None
+        last_cycle = None
         try:
             if log_path.exists():
-                lines = log_path.read_text().strip().split('\n')
-                last_bot_line = lines[-1] if lines else "N/A"
+                all_lines = log_path.read_text().strip().split('\n')
+                last_bot_line = all_lines[-1] if all_lines else "N/A"
+                # Get last 50 meaningful lines (skip blanks)
+                meaningful = [l for l in all_lines if l.strip() and '[INFO]' in l or '[WARNING]' in l or '[ERROR]' in l]
+                recent_log_lines = meaningful[-30:]
+                # Detect bot state
+                for line in reversed(all_lines[-20:]):
+                    if 'Prossima apertura' in line or 'In attesa' in line:
+                        bot_sleeping = True
+                        bot_running = True
+                        break
+                    elif 'Analisi ' in line:
+                        bot_running = True
+                        current_analysis = line.split('Analisi ')[-1].strip().rstrip('.')
+                        break
+                    elif 'CICLO #' in line:
+                        bot_running = True
+                        last_cycle = line
+                        break
+                    elif 'AUTO TRADER TERMINATO' in line:
+                        bot_running = False
+                        break
+                    elif 'AUTO TRADER' in line:
+                        bot_running = True
         except Exception:
             last_bot_line = "Log non disponibile"
+
+        # Parse recent decisions from decisions.jsonl
+        decisions_path = Path(__file__).parent.parent / 'logs' / 'decisions.jsonl'
+        recent_decisions = []
+        try:
+            if decisions_path.exists():
+                dec_lines = decisions_path.read_text().strip().split('\n')
+                for dl in reversed(dec_lines[-20:]):
+                    if dl.strip():
+                        d = json.loads(dl)
+                        recent_decisions.append({
+                            'timestamp': d.get('timestamp', '')[:16].replace('T', ' '),
+                            'ticker': d.get('ticker', '?'),
+                            'decision': d.get('decision', '?'),
+                            'order_status': d.get('order_status', 'N/A'),
+                            'order_id': d.get('order_id', None),
+                            'report_preview': (d.get('full_report', '') or '')[:200],
+                        })
+        except Exception:
+            pass
+
+        # Parse log for per-ticker activity
+        ticker_activity = []
+        try:
+            for line in reversed(recent_log_lines):
+                if 'Decisione agente:' in line:
+                    parts = line.split('[INFO]')[-1].strip() if '[INFO]' in line else line
+                    ticker_activity.append({
+                        'time': line[:19] if len(line) >= 19 else '',
+                        'message': parts,
+                        'type': 'decision'
+                    })
+                elif 'Invio ordine:' in line:
+                    parts = line.split('[INFO]')[-1].strip() if '[INFO]' in line else line
+                    ticker_activity.append({
+                        'time': line[:19] if len(line) >= 19 else '',
+                        'message': parts,
+                        'type': 'order'
+                    })
+                elif 'Ordine OK!' in line:
+                    parts = line.split('[INFO]')[-1].strip() if '[INFO]' in line else line
+                    ticker_activity.append({
+                        'time': line[:19] if len(line) >= 19 else '',
+                        'message': parts,
+                        'type': 'filled'
+                    })
+                elif 'Errore' in line or 'ERRORE' in line:
+                    parts = line.split('[ERROR]')[-1].strip() if '[ERROR]' in line else line.split('[INFO]')[-1].strip() if '[INFO]' in line else line
+                    ticker_activity.append({
+                        'time': line[:19] if len(line) >= 19 else '',
+                        'message': parts,
+                        'type': 'error'
+                    })
+                elif 'skip' in line:
+                    parts = line.split('[INFO]')[-1].strip() if '[INFO]' in line else line
+                    ticker_activity.append({
+                        'time': line[:19] if len(line) >= 19 else '',
+                        'message': parts,
+                        'type': 'skip'
+                    })
+            ticker_activity = ticker_activity[:15]  # Max 15
+        except Exception:
+            pass
+
+        # Bot state description
+        if bot_sleeping:
+            bot_state = 'sleeping'
+            bot_state_text = 'In attesa apertura mercati'
+        elif current_analysis:
+            bot_state = 'analyzing'
+            bot_state_text = f'Analizzando {current_analysis}'
+        elif bot_running:
+            bot_state = 'running'
+            bot_state_text = 'Attivo'
+        else:
+            bot_state = 'stopped'
+            bot_state_text = 'Fermo'
+
+        # Next market open
+        next_open_str = ''
+        if not market_open:
+            next_day = now_et + timedelta(days=1)
+            next_day = next_day.replace(hour=9, minute=30, second=0, microsecond=0)
+            while next_day.weekday() >= 5:
+                next_day += timedelta(days=1)
+            next_open_str = next_day.strftime('%A %d/%m %H:%M ET')
 
         # Exposure metrics
         cash_pct = (cash / portfolio_value * 100) if portfolio_value > 0 else 100
@@ -287,10 +400,17 @@ def get_alpaca_data():
             },
             'bot': {
                 'tickers': TICKERS,
-                'model': 'GPT-5.4-pro',
+                'model': 'GPT-5.4',
                 'cycle_min': 15,
-                'last_log': last_bot_line[-120:] if last_bot_line else 'N/A',
+                'last_log': last_bot_line[-200:] if last_bot_line else 'N/A',
+                'state': bot_state,
+                'state_text': bot_state_text,
+                'current_analysis': current_analysis,
+                'recent_decisions': recent_decisions[:10],
+                'ticker_activity': ticker_activity,
+                'recent_log_lines': [l[-150:] for l in recent_log_lines[-10:]],
             },
+            'next_open': next_open_str,
         }
 
         cache['data'] = data

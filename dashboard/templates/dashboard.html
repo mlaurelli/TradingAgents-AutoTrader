@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>TradingAgents</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -20,62 +20,68 @@
     </script>
     <style>
         * { -webkit-tap-highlight-color: transparent; }
-        body { font-family: 'Inter', system-ui, sans-serif; background: #f5f5f7; min-height: 100vh; }
-        .card { background: #fff; border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
-        .pos { color: #16a34a; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: #f8fafc; min-height: 100vh; }
+        .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+        .pos { color: #059669; }
         .neg { color: #dc2626; }
-        .badge-buy { background: #dcfce7; color: #16a34a; }
-        .badge-sell { background: #fee2e2; color: #dc2626; }
-        .badge-hold { background: #f3f4f6; color: #6b7280; }
-        .badge-filled { background: #dcfce7; color: #16a34a; }
-        .badge-new { background: #dbeafe; color: #2563eb; }
-        .badge-cancelled { background: #f3f4f6; color: #9ca3af; }
-        .ring-green { box-shadow: 0 0 0 2px #bbf7d0; }
-        .ring-red { box-shadow: 0 0 0 2px #fecaca; }
-        .glow-green { }
-        .glow-red { }
-        .bar-bg { background: #e5e7eb; }
-        .bar-fill-green { background: linear-gradient(90deg, #22c55e, #86efac); }
-        .bar-fill-red { background: linear-gradient(90deg, #ef4444, #fca5a5); }
-        .bar-fill-blue { background: linear-gradient(90deg, #3b82f6, #93c5fd); }
-        .bar-fill-purple { background: linear-gradient(90deg, #7c3aed, #c4b5fd); }
-        .status-dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
-        .dot-green { background:#22c55e; box-shadow:0 0 6px rgba(34,197,94,.4); }
-        .dot-red { background:#ef4444; box-shadow:0 0 6px rgba(239,68,68,.4); }
-        .dot-yellow { background:#eab308; box-shadow:0 0 6px rgba(234,179,8,.4); }
+        .badge-buy { background: #ecfdf5; color: #059669; font-weight: 600; }
+        .badge-sell { background: #fef2f2; color: #dc2626; font-weight: 600; }
+        .badge-hold { background: #f8fafc; color: #64748b; font-weight: 600; }
+        .badge-overweight { background: #ecfdf5; color: #059669; font-weight: 600; }
+        .badge-underweight { background: #fef2f2; color: #dc2626; font-weight: 600; }
+        .badge-filled { background: #ecfdf5; color: #059669; }
+        .badge-new { background: #eff6ff; color: #2563eb; }
+        .badge-cancelled { background: #f8fafc; color: #94a3b8; }
+        .badge-decision { background: #f5f3ff; color: #7c3aed; }
+        .badge-order { background: #eff6ff; color: #2563eb; }
+        .badge-error { background: #fef2f2; color: #dc2626; }
+        .badge-skip { background: #fefce8; color: #ca8a04; }
+        .ring-green { border-left: 3px solid #10b981; }
+        .ring-red { border-left: 3px solid #ef4444; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .dot-green { background: #10b981; }
+        .dot-red { background: #ef4444; }
+        .dot-yellow { background: #f59e0b; }
+        .dot-blue { background: #3b82f6; }
+        .dot-purple { background: #8b5cf6; }
+        .bar-bg { background: #e2e8f0; }
+        .bar-green { background: linear-gradient(90deg, #10b981, #6ee7b7); }
+        .bar-red { background: linear-gradient(90deg, #ef4444, #fca5a5); }
+        .bar-purple { background: linear-gradient(90deg, #8b5cf6, #c4b5fd); }
+        .section-title { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; }
         .fade-in { animation: fadeIn .3s ease; }
-        @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes pulse2 { 0%,100%{opacity:1} 50%{opacity:.5} }
-        .pulse2 { animation: pulse2 1.5s infinite; }
-        .sub { color: #6b7280; }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.4} }
+        .pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+        .log-line { font-size: 10px; line-height: 1.6; font-family: 'SF Mono', 'Fira Code', monospace; color: #475569; word-break: break-all; }
     </style>
 </head>
-<body class="text-gray-900 pb-20">
+<body class="text-gray-800 pb-24">
 
 <!-- Header -->
-<div class="sticky top-0 z-50 backdrop-blur-xl bg-white/80 border-b border-gray-200 px-4 py-3">
+<div class="sticky top-0 z-50 bg-white/90 backdrop-blur-lg border-b border-gray-200/80 px-4 py-3">
     <div class="flex items-center justify-between max-w-lg mx-auto">
         <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-sm">
                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
                 </svg>
             </div>
             <div>
-                <h1 class="text-sm font-bold">TradingAgents</h1>
+                <h1 class="text-sm font-bold text-gray-900">TradingAgents</h1>
                 <div class="flex items-center gap-1.5">
-                    <span class="status-dot {% if data.market.is_open %}dot-green{% else %}dot-red{% endif %}"></span>
-                    <span class="text-[10px] text-gray-500">{{ data.market.status_text }}</span>
+                    <span class="dot {% if data.market.is_open %}dot-green pulse-dot{% else %}dot-red{% endif %}"></span>
+                    <span class="text-[10px] text-gray-500 font-medium">{{ data.market.status_text }}</span>
                 </div>
             </div>
         </div>
         <div class="flex items-center gap-2">
-            <button id="refreshBtn" onclick="refreshData()" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition">
+            <button id="refreshBtn" onclick="refreshData()" class="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 transition">
                 <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                 </svg>
             </button>
-            <a href="/logout" class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition">
+            <a href="/logout" class="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 transition">
                 <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
                 </svg>
@@ -84,183 +90,181 @@
     </div>
 </div>
 
-<div class="max-w-lg mx-auto px-4 pt-4 space-y-4">
+<div class="max-w-lg mx-auto px-4 pt-5 space-y-4">
 
-    <!-- Hero: Portfolio Value -->
-    <div class="card rounded-2xl p-5 fade-in">
-        <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Portfolio Value</p>
-        <div class="flex items-end gap-3">
-            <span class="text-3xl font-extrabold tracking-tight">${{ "{:,.2f}".format(data.portfolio.value) }}</span>
-            <span class="text-sm font-semibold mb-1 {% if data.portfolio.performance_pct >= 0 %}pos glow-green{% else %}neg glow-red{% endif %}">
+    <!-- Portfolio Hero -->
+    <div class="card p-5 fade-in">
+        <div class="flex items-center justify-between mb-1">
+            <p class="section-title">Portfolio</p>
+            <span class="text-[10px] text-gray-400 font-medium">{{ data.market.time_it }} IT</span>
+        </div>
+        <div class="flex items-end gap-3 mt-2">
+            <span class="text-3xl font-extrabold text-gray-900 tracking-tight">${{ "{:,.2f}".format(data.portfolio.value) }}</span>
+            <span class="text-sm font-bold mb-0.5 {% if data.portfolio.performance_pct >= 0 %}pos{% else %}neg{% endif %}">
                 {% if data.portfolio.performance_pct >= 0 %}+{% endif %}{{ "%.2f"|format(data.portfolio.performance_pct) }}%
             </span>
         </div>
-        <p class="text-xs mt-1 {% if data.portfolio.performance_abs >= 0 %}pos{% else %}neg{% endif %}">
-            {% if data.portfolio.performance_abs >= 0 %}+{% endif %}${{ "{:,.2f}".format(data.portfolio.performance_abs) }} dal capitale iniziale (${{ "{:,.0f}".format(data.portfolio.initial_capital) }})
+        <p class="text-[11px] mt-1 {% if data.portfolio.performance_abs >= 0 %}text-emerald-600{% else %}text-red-500{% endif %} font-medium">
+            {% if data.portfolio.performance_abs >= 0 %}+{% endif %}${{ "{:,.2f}".format(data.portfolio.performance_abs) }}
+            <span class="text-gray-400 font-normal">da ${{ "{:,.0f}".format(data.portfolio.initial_capital) }}</span>
         </p>
 
-        <!-- Exposure Bar -->
-        <div class="mt-4">
-            <div class="flex justify-between text-[10px] text-gray-500 mb-1">
-                <span>Investito {{ "%.1f"|format(data.portfolio.invested_pct) }}%</span>
-                <span>Cash {{ "%.1f"|format(data.portfolio.cash_pct) }}%</span>
+        <!-- Allocation Bar -->
+        <div class="mt-4 bg-gray-50 rounded-xl p-3">
+            <div class="flex justify-between text-[10px] font-medium mb-1.5">
+                <span class="text-violet-600">Investito {{ "%.1f"|format(data.portfolio.invested_pct) }}%</span>
+                <span class="text-gray-500">Cash {{ "%.1f"|format(data.portfolio.cash_pct) }}%</span>
             </div>
             <div class="bar-bg rounded-full h-2 overflow-hidden flex">
-                <div class="bar-fill-purple h-full" style="width:{{ data.portfolio.invested_pct }}%"></div>
+                <div class="bar-purple h-full rounded-full" style="width:{{ data.portfolio.invested_pct }}%"></div>
             </div>
         </div>
     </div>
 
-    <!-- Quick Stats Grid -->
-    <div class="grid grid-cols-4 gap-2 fade-in">
-        <div class="card rounded-xl p-3 text-center">
-            <p class="text-[10px] text-gray-500">Cash</p>
-            <p class="text-xs font-bold mt-0.5">${{ "{:,.0f}".format(data.portfolio.cash) }}</p>
+    <!-- Account Stats -->
+    <div class="grid grid-cols-2 gap-3 fade-in">
+        <div class="card p-4">
+            <p class="text-[10px] text-gray-400 font-medium">Cash Disponibile</p>
+            <p class="text-lg font-bold text-gray-900 mt-0.5">${{ "{:,.0f}".format(data.portfolio.cash) }}</p>
         </div>
-        <div class="card rounded-xl p-3 text-center">
-            <p class="text-[10px] text-gray-500">Equity</p>
-            <p class="text-xs font-bold mt-0.5">${{ "{:,.0f}".format(data.portfolio.equity) }}</p>
-        </div>
-        <div class="card rounded-xl p-3 text-center">
-            <p class="text-[10px] text-gray-500">Buy Power</p>
-            <p class="text-xs font-bold mt-0.5">${{ "{:,.0f}".format(data.portfolio.buying_power) }}</p>
-        </div>
-        <div class="card rounded-xl p-3 text-center">
-            <p class="text-[10px] text-gray-500">Positions</p>
-            <p class="text-xs font-bold mt-0.5">{{ data.summary.total_positions }}</p>
+        <div class="card p-4">
+            <p class="text-[10px] text-gray-400 font-medium">Buying Power</p>
+            <p class="text-lg font-bold text-gray-900 mt-0.5">${{ "{:,.0f}".format(data.portfolio.buying_power) }}</p>
         </div>
     </div>
 
     <!-- Unrealized P&L -->
-    <div class="card rounded-2xl p-5 fade-in">
-        <div class="flex items-center justify-between mb-3">
-            <p class="text-xs text-gray-500 uppercase tracking-wider">Unrealized P&L</p>
-            {% if data.summary.total_positions > 0 %}
-            <span class="text-[10px] px-2 py-0.5 rounded-full {% if data.summary.winners >= data.summary.losers %}badge-buy{% else %}badge-sell{% endif %}">
+    {% if data.summary.total_positions > 0 %}
+    <div class="card p-5 fade-in">
+        <div class="flex items-center justify-between mb-2">
+            <p class="section-title">P&L Non Realizzato</p>
+            <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold {% if data.summary.winners >= data.summary.losers %}badge-buy{% else %}badge-sell{% endif %}">
                 {{ data.summary.winners }}W / {{ data.summary.losers }}L
             </span>
-            {% endif %}
         </div>
-        <p class="text-2xl font-bold {% if data.summary.total_unrealized >= 0 %}pos{% else %}neg{% endif %}">
+        <p class="text-2xl font-extrabold {% if data.summary.total_unrealized >= 0 %}pos{% else %}neg{% endif %}">
             {% if data.summary.total_unrealized >= 0 %}+{% endif %}${{ "{:,.2f}".format(data.summary.total_unrealized) }}
         </p>
         {% if data.summary.best %}
         <div class="grid grid-cols-2 gap-2 mt-3">
-            <div class="bg-green-50 border border-green-200 rounded-lg p-2">
-                <p class="text-[10px] text-gray-500">Best</p>
-                <p class="text-xs font-bold pos">{{ data.summary.best.symbol }} +${{ "%.2f"|format(data.summary.best.pnl) }}</p>
+            <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-2.5">
+                <p class="text-[10px] text-gray-400 font-medium">Migliore</p>
+                <p class="text-xs font-bold pos mt-0.5">{{ data.summary.best.symbol }} +${{ "%.2f"|format(data.summary.best.pnl) }}</p>
             </div>
-            <div class="bg-red-50 border border-red-200 rounded-lg p-2">
-                <p class="text-[10px] text-gray-500">Worst</p>
-                <p class="text-xs font-bold neg">{{ data.summary.worst.symbol }} ${{ "%.2f"|format(data.summary.worst.pnl) }}</p>
+            <div class="bg-red-50 border border-red-100 rounded-xl p-2.5">
+                <p class="text-[10px] text-gray-400 font-medium">Peggiore</p>
+                <p class="text-xs font-bold neg mt-0.5">{{ data.summary.worst.symbol }} ${{ "%.2f"|format(data.summary.worst.pnl) }}</p>
             </div>
         </div>
         {% endif %}
     </div>
+    {% endif %}
 
-    <!-- Positions -->
-    <div class="card rounded-2xl p-5 fade-in">
-        <p class="text-xs text-gray-500 uppercase tracking-wider mb-3">Open Positions</p>
+    <!-- Open Positions -->
+    <div class="card p-5 fade-in">
+        <p class="section-title mb-3">Posizioni Aperte</p>
         {% if data.positions %}
-        <div class="space-y-3">
+        <div class="space-y-2.5">
             {% for pos in data.positions %}
-            <div class="bg-gray-50 rounded-xl p-3 {% if pos.pnl >= 0 %}ring-green{% else %}ring-red{% endif %}">
+            <div class="bg-gray-50 rounded-xl p-3.5 {% if pos.pnl >= 0 %}ring-green{% else %}ring-red{% endif %}">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
-                        <span class="font-bold text-sm">{{ pos.symbol }}</span>
-                        <span class="text-[10px] px-1.5 py-0.5 rounded {% if pos.side == 'long' %}badge-buy{% else %}badge-sell{% endif %}">{{ pos.side }}</span>
-                        <span class="text-[10px] text-gray-500">{{ "%.1f"|format(pos.weight) }}%</span>
+                        <span class="font-bold text-sm text-gray-900">{{ pos.symbol }}</span>
+                        <span class="text-[9px] px-1.5 py-0.5 rounded-md {% if pos.side == 'long' %}badge-buy{% else %}badge-sell{% endif %}">{{ pos.side|upper }}</span>
+                        <span class="text-[9px] text-gray-400 font-medium">{{ "%.1f"|format(pos.weight) }}% portf.</span>
                     </div>
                     <div class="text-right">
                         <span class="text-sm font-bold {% if pos.pnl >= 0 %}pos{% else %}neg{% endif %}">
                             {% if pos.pnl >= 0 %}+{% endif %}${{ "%.2f"|format(pos.pnl) }}
                         </span>
-                        <span class="text-[10px] ml-1 {% if pos.pnl_pct >= 0 %}pos{% else %}neg{% endif %}">
-                            ({% if pos.pnl_pct >= 0 %}+{% endif %}{{ "%.1f"|format(pos.pnl_pct) }}%)
+                        <span class="text-[10px] ml-0.5 {% if pos.pnl_pct >= 0 %}pos{% else %}neg{% endif %} font-medium">
+                            {% if pos.pnl_pct >= 0 %}+{% endif %}{{ "%.1f"|format(pos.pnl_pct) }}%
                         </span>
                     </div>
                 </div>
-                <div class="grid grid-cols-4 gap-1 mt-2 text-[10px] text-gray-500">
-                    <div>Qty <span class="text-gray-900 font-medium">{{ pos.qty }}</span></div>
-                    <div>Entry <span class="text-gray-900 font-medium">${{ "%.2f"|format(pos.avg_entry_price) }}</span></div>
-                    <div>Now <span class="text-gray-900 font-medium">${{ "%.2f"|format(pos.current_price) }}</span></div>
-                    <div>Today <span class="font-medium {% if pos.change_today >= 0 %}pos{% else %}neg{% endif %}">{% if pos.change_today >= 0 %}+{% endif %}{{ "%.1f"|format(pos.change_today) }}%</span></div>
+                <div class="grid grid-cols-4 gap-1 mt-2.5 text-[10px]">
+                    <div class="text-gray-400">Qty <span class="text-gray-700 font-semibold">{{ pos.qty }}</span></div>
+                    <div class="text-gray-400">Entry <span class="text-gray-700 font-semibold">${{ "%.2f"|format(pos.avg_entry_price) }}</span></div>
+                    <div class="text-gray-400">Now <span class="text-gray-700 font-semibold">${{ "%.2f"|format(pos.current_price) }}</span></div>
+                    <div class="text-gray-400">Today <span class="font-semibold {% if pos.change_today >= 0 %}pos{% else %}neg{% endif %}">{% if pos.change_today >= 0 %}+{% endif %}{{ "%.1f"|format(pos.change_today) }}%</span></div>
                 </div>
-                <!-- P&L bar -->
                 <div class="bar-bg rounded-full h-1 mt-2 overflow-hidden">
                     {% if pos.pnl_pct >= 0 %}
-                    <div class="bar-fill-green h-full" style="width:{{ [pos.pnl_pct * 5, 100] | min }}%"></div>
+                    <div class="bar-green h-full rounded-full" style="width:{{ [pos.pnl_pct * 5, 100] | min }}%"></div>
                     {% else %}
-                    <div class="bar-fill-red h-full" style="width:{{ [pos.pnl_pct | abs * 5, 100] | min }}%"></div>
+                    <div class="bar-red h-full rounded-full" style="width:{{ [pos.pnl_pct | abs * 5, 100] | min }}%"></div>
                     {% endif %}
                 </div>
             </div>
             {% endfor %}
         </div>
         {% else %}
-        <div class="text-center py-8">
-            <p class="text-gray-400 text-sm">Nessuna posizione aperta</p>
-            <p class="text-gray-400 text-xs mt-1">Il bot aprira posizioni all'apertura dei mercati</p>
+        <div class="text-center py-6 bg-gray-50 rounded-xl">
+            <svg class="w-8 h-8 mx-auto text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+            </svg>
+            <p class="text-gray-400 text-sm font-medium">Nessuna posizione aperta</p>
+            <p class="text-gray-300 text-xs mt-1">Il bot aprira posizioni all'apertura dei mercati</p>
         </div>
         {% endif %}
     </div>
 
-    <!-- Today's Activity -->
-    <div class="card rounded-2xl p-5 fade-in">
+    <!-- Today's Orders -->
+    <div class="card p-5 fade-in">
         <div class="flex items-center justify-between mb-3">
-            <p class="text-xs text-gray-500 uppercase tracking-wider">Today's Activity</p>
-            <span class="text-[10px] text-gray-500">{{ data.summary.today_orders }} ordini</span>
+            <p class="section-title">Ordini Oggi</p>
+            <span class="text-[10px] text-gray-400 font-medium">{{ data.summary.today_orders }} totali</span>
         </div>
         <div class="grid grid-cols-3 gap-2 mb-3">
-            <div class="text-center bg-gray-50 rounded-lg p-2">
-                <p class="text-[10px] text-gray-500">Filled</p>
-                <p class="text-sm font-bold pos">{{ data.summary.filled_today }}</p>
+            <div class="text-center bg-emerald-50 rounded-xl p-2.5">
+                <p class="text-[10px] text-gray-400 font-medium">Eseguiti</p>
+                <p class="text-base font-bold text-emerald-600">{{ data.summary.filled_today }}</p>
             </div>
-            <div class="text-center bg-gray-50 rounded-lg p-2">
-                <p class="text-[10px] text-gray-500">Pending</p>
-                <p class="text-sm font-bold text-blue-600">{{ data.summary.today_orders - data.summary.filled_today - data.summary.cancelled_today }}</p>
+            <div class="text-center bg-blue-50 rounded-xl p-2.5">
+                <p class="text-[10px] text-gray-400 font-medium">Pending</p>
+                <p class="text-base font-bold text-blue-600">{{ data.summary.today_orders - data.summary.filled_today - data.summary.cancelled_today }}</p>
             </div>
-            <div class="text-center bg-gray-50 rounded-lg p-2">
-                <p class="text-[10px] text-gray-500">Cancelled</p>
-                <p class="text-sm font-bold text-gray-400">{{ data.summary.cancelled_today }}</p>
+            <div class="text-center bg-gray-50 rounded-xl p-2.5">
+                <p class="text-[10px] text-gray-400 font-medium">Annullati</p>
+                <p class="text-base font-bold text-gray-400">{{ data.summary.cancelled_today }}</p>
             </div>
         </div>
         {% if data.today_orders %}
-        <div class="space-y-1.5">
+        <div class="space-y-1">
             {% for o in data.today_orders[:8] %}
-            <div class="flex items-center justify-between py-1.5 border-b border-gray-100 last:border-0">
+            <div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
                 <div class="flex items-center gap-2">
-                    <span class="text-xs font-medium">{{ o.symbol }}</span>
-                    <span class="text-[10px] px-1.5 py-0.5 rounded {% if o.side == 'buy' %}badge-buy{% else %}badge-sell{% endif %}">{{ o.side }}</span>
-                    <span class="text-[10px] text-gray-500">x{{ o.qty }}</span>
+                    <span class="text-xs font-bold text-gray-800">{{ o.symbol }}</span>
+                    <span class="text-[9px] px-1.5 py-0.5 rounded-md {% if o.side == 'buy' %}badge-buy{% else %}badge-sell{% endif %}">{{ o.side|upper }}</span>
+                    <span class="text-[10px] text-gray-400">x{{ o.qty }}</span>
                 </div>
                 <div class="flex items-center gap-2">
-                    {% if o.filled_avg_price %}<span class="text-[10px] text-gray-400">${{ "%.2f"|format(o.filled_avg_price) }}</span>{% endif %}
-                    <span class="text-[10px] px-1.5 py-0.5 rounded badge-{{ o.status }}">{{ o.status }}</span>
+                    {% if o.filled_avg_price %}<span class="text-[10px] text-gray-500 font-medium">${{ "%.2f"|format(o.filled_avg_price) }}</span>{% endif %}
+                    <span class="text-[9px] px-1.5 py-0.5 rounded-md badge-{{ o.status }}">{{ o.status }}</span>
                 </div>
             </div>
             {% endfor %}
         </div>
         {% else %}
-        <p class="text-center text-gray-400 text-xs py-2">Nessun ordine oggi</p>
+        <p class="text-center text-gray-300 text-xs py-3">Nessun ordine piazzato oggi</p>
         {% endif %}
     </div>
 
     <!-- Recent Fills -->
     {% if data.recent_fills %}
-    <div class="card rounded-2xl p-5 fade-in">
-        <p class="text-xs text-gray-500 uppercase tracking-wider mb-3">Recent Fills</p>
-        <div class="space-y-1.5">
+    <div class="card p-5 fade-in">
+        <p class="section-title mb-3">Ultimi Fill</p>
+        <div class="space-y-1">
             {% for f in data.recent_fills %}
-            <div class="flex items-center justify-between py-1.5 border-b border-gray-100 last:border-0">
+            <div class="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
                 <div class="flex items-center gap-2">
-                    <span class="text-xs font-medium">{{ f.symbol }}</span>
-                    <span class="text-[10px] px-1.5 py-0.5 rounded {% if f.side == 'buy' %}badge-buy{% else %}badge-sell{% endif %}">{{ f.side }}</span>
-                    <span class="text-[10px] text-gray-500">x{{ f.qty }}</span>
+                    <span class="text-xs font-bold text-gray-800">{{ f.symbol }}</span>
+                    <span class="text-[9px] px-1.5 py-0.5 rounded-md {% if f.side == 'buy' %}badge-buy{% else %}badge-sell{% endif %}">{{ f.side|upper }}</span>
+                    <span class="text-[10px] text-gray-400">x{{ f.qty }}</span>
                 </div>
                 <div class="text-right">
-                    <span class="text-[10px] text-gray-900 font-medium">${{ "%.2f"|format(f.price) }}</span>
-                    <p class="text-[9px] text-gray-600">{{ f.timestamp }}</p>
+                    <span class="text-[11px] text-gray-700 font-semibold">${{ "%.2f"|format(f.price) }}</span>
+                    <p class="text-[9px] text-gray-400">{{ f.timestamp }}</p>
                 </div>
             </div>
             {% endfor %}
@@ -269,60 +273,167 @@
     {% endif %}
 
     <!-- Bot Status -->
-    <div class="card rounded-2xl p-5 fade-in">
-        <p class="text-xs text-gray-500 uppercase tracking-wider mb-3">Bot Status</p>
-        <div class="grid grid-cols-2 gap-3">
-            <div class="bg-gray-50 rounded-lg p-3">
-                <p class="text-[10px] text-gray-500">Model</p>
-                <p class="text-xs font-bold text-purple-600">{{ data.bot.model }}</p>
+    <div class="card p-5 fade-in">
+        <p class="section-title mb-3">Stato Bot</p>
+
+        <!-- Bot State Banner -->
+        <div class="flex items-center gap-3 bg-gray-50 rounded-xl p-3.5 mb-3">
+            <div class="flex-shrink-0">
+                {% if data.bot.state == 'analyzing' %}
+                <span class="dot dot-blue pulse-dot"></span>
+                {% elif data.bot.state == 'sleeping' %}
+                <span class="dot dot-yellow"></span>
+                {% elif data.bot.state == 'running' %}
+                <span class="dot dot-green pulse-dot"></span>
+                {% else %}
+                <span class="dot dot-red"></span>
+                {% endif %}
             </div>
-            <div class="bg-gray-50 rounded-lg p-3">
-                <p class="text-[10px] text-gray-500">Cycle</p>
-                <p class="text-xs font-bold">Every {{ data.bot.cycle_min }}m</p>
+            <div class="flex-1 min-w-0">
+                <p class="text-xs font-bold text-gray-800">{{ data.bot.state_text }}</p>
+                {% if data.next_open %}
+                <p class="text-[10px] text-gray-400 mt-0.5">Prossima apertura: {{ data.next_open }}</p>
+                {% endif %}
             </div>
         </div>
-        <div class="mt-3 bg-gray-50 rounded-lg p-3">
-            <p class="text-[10px] text-gray-500 mb-1">Tickers</p>
-            <div class="flex flex-wrap gap-1.5">
-                {% for t in data.bot.tickers %}
-                <span class="text-[10px] px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full font-medium">{{ t }}</span>
-                {% endfor %}
+
+        <!-- Config Grid -->
+        <div class="grid grid-cols-3 gap-2 mb-3">
+            <div class="bg-violet-50 rounded-xl p-3 text-center">
+                <p class="text-[9px] text-gray-400 font-medium">Modello AI</p>
+                <p class="text-[11px] font-bold text-violet-700 mt-0.5">{{ data.bot.model }}</p>
+            </div>
+            <div class="bg-gray-50 rounded-xl p-3 text-center">
+                <p class="text-[9px] text-gray-400 font-medium">Ciclo</p>
+                <p class="text-[11px] font-bold text-gray-700 mt-0.5">{{ data.bot.cycle_min }} min</p>
+            </div>
+            <div class="bg-gray-50 rounded-xl p-3 text-center">
+                <p class="text-[9px] text-gray-400 font-medium">Ticker</p>
+                <p class="text-[11px] font-bold text-gray-700 mt-0.5">{{ data.bot.tickers|length }}</p>
             </div>
         </div>
-        <div class="mt-3 bg-gray-50 rounded-lg p-3">
-            <p class="text-[10px] text-gray-500 mb-1">Last Log</p>
-            <p class="text-[10px] text-gray-600 font-mono break-all">{{ data.bot.last_log }}</p>
+
+        <!-- Tickers -->
+        <div class="flex flex-wrap gap-1.5 mb-3">
+            {% for t in data.bot.tickers %}
+            <span class="text-[10px] px-2.5 py-1 bg-violet-50 text-violet-700 rounded-lg font-semibold border border-violet-100">{{ t }}</span>
+            {% endfor %}
         </div>
     </div>
 
+    <!-- AI Decisions Log -->
+    <div class="card p-5 fade-in">
+        <p class="section-title mb-3">Decisioni AI</p>
+        {% if data.bot.recent_decisions %}
+        <div class="space-y-2">
+            {% for d in data.bot.recent_decisions %}
+            <div class="bg-gray-50 rounded-xl p-3 border-l-3 {% if d.decision in ['BUY','OVERWEIGHT'] %}border-l-emerald-400{% elif d.decision in ['SELL','UNDERWEIGHT'] %}border-l-red-400{% else %}border-l-gray-300{% endif %}" style="border-left-width:3px">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-gray-800">{{ d.ticker }}</span>
+                        <span class="text-[9px] px-1.5 py-0.5 rounded-md font-bold
+                            {% if d.decision in ['BUY','OVERWEIGHT'] %}badge-buy
+                            {% elif d.decision in ['SELL','UNDERWEIGHT'] %}badge-sell
+                            {% else %}badge-hold{% endif %}">{{ d.decision }}</span>
+                    </div>
+                    <span class="text-[9px] text-gray-400">{{ d.timestamp }}</span>
+                </div>
+                <div class="flex items-center gap-2 mt-1.5">
+                    <span class="text-[9px] px-1.5 py-0.5 rounded-md
+                        {% if d.order_status == 'NO_ORDER' %}bg-yellow-50 text-yellow-600
+                        {% elif d.order_id %}bg-emerald-50 text-emerald-600
+                        {% else %}bg-gray-100 text-gray-500{% endif %} font-medium">
+                        {% if d.order_id %}Ordine eseguito{% elif d.order_status == 'NO_ORDER' %}Nessun ordine{% else %}{{ d.order_status }}{% endif %}
+                    </span>
+                </div>
+                {% if d.report_preview %}
+                <p class="text-[9px] text-gray-400 mt-1.5 leading-relaxed line-clamp-2">{{ d.report_preview }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5 bg-gray-50 rounded-xl">
+            <p class="text-gray-300 text-xs font-medium">Nessuna decisione registrata</p>
+            <p class="text-gray-300 text-[10px] mt-0.5">Le decisioni appariranno durante il trading</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Activity Feed -->
+    {% if data.bot.ticker_activity %}
+    <div class="card p-5 fade-in">
+        <p class="section-title mb-3">Attivita Recente</p>
+        <div class="space-y-1.5">
+            {% for a in data.bot.ticker_activity %}
+            <div class="flex items-start gap-2 py-1.5">
+                <span class="text-[9px] px-1.5 py-0.5 rounded-md mt-0.5 flex-shrink-0
+                    {% if a.type == 'decision' %}badge-decision
+                    {% elif a.type == 'order' %}badge-order
+                    {% elif a.type == 'filled' %}badge-filled
+                    {% elif a.type == 'error' %}badge-error
+                    {% elif a.type == 'skip' %}badge-skip
+                    {% else %}bg-gray-100 text-gray-500{% endif %} font-medium">{{ a.type }}</span>
+                <p class="text-[10px] text-gray-600 leading-relaxed flex-1">{{ a.message }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Raw Log -->
+    <div class="card p-5 fade-in">
+        <details>
+            <summary class="section-title cursor-pointer select-none flex items-center gap-2">
+                <span>Log Completo</span>
+                <svg class="w-3 h-3 text-gray-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </summary>
+            <div class="mt-3 bg-slate-50 rounded-xl p-3 space-y-0.5 max-h-64 overflow-y-auto">
+                {% for line in data.bot.recent_log_lines %}
+                <p class="log-line">{{ line }}</p>
+                {% endfor %}
+                {% if not data.bot.recent_log_lines %}
+                <p class="log-line text-gray-300">Nessun log disponibile</p>
+                {% endif %}
+            </div>
+        </details>
+    </div>
+
     <!-- Market Info -->
-    <div class="card rounded-2xl p-5 fade-in">
-        <p class="text-xs text-gray-500 uppercase tracking-wider mb-3">Market</p>
-        <div class="grid grid-cols-3 gap-2">
-            <div class="text-center">
-                <p class="text-[10px] text-gray-500">Status</p>
-                <div class="flex items-center justify-center gap-1 mt-1">
-                    <span class="status-dot {% if data.market.is_open %}dot-green{% else %}dot-red{% endif %}"></span>
-                    <span class="text-xs font-medium">{% if data.market.is_open %}Open{% else %}Closed{% endif %}</span>
+    <div class="card p-5 fade-in">
+        <p class="section-title mb-3">Mercato</p>
+        <div class="grid grid-cols-3 gap-3">
+            <div class="text-center bg-gray-50 rounded-xl p-3">
+                <p class="text-[9px] text-gray-400 font-medium">Stato</p>
+                <div class="flex items-center justify-center gap-1.5 mt-1.5">
+                    <span class="dot {% if data.market.is_open %}dot-green{% else %}dot-red{% endif %}"></span>
+                    <span class="text-xs font-bold text-gray-700">{% if data.market.is_open %}Aperto{% else %}Chiuso{% endif %}</span>
                 </div>
             </div>
-            <div class="text-center">
-                <p class="text-[10px] text-gray-500">New York</p>
-                <p class="text-xs font-bold mt-1">{{ data.market.time_et }}</p>
+            <div class="text-center bg-gray-50 rounded-xl p-3">
+                <p class="text-[9px] text-gray-400 font-medium">New York</p>
+                <p class="text-xs font-bold text-gray-700 mt-1.5">{{ data.market.time_et }}</p>
             </div>
-            <div class="text-center">
-                <p class="text-[10px] text-gray-500">Italia</p>
-                <p class="text-xs font-bold mt-1">{{ data.market.time_it }}</p>
+            <div class="text-center bg-gray-50 rounded-xl p-3">
+                <p class="text-[9px] text-gray-400 font-medium">Italia</p>
+                <p class="text-xs font-bold text-gray-700 mt-1.5">{{ data.market.time_it }}</p>
             </div>
         </div>
+        {% if data.next_open %}
+        <div class="mt-3 bg-amber-50 border border-amber-100 rounded-xl p-3 text-center">
+            <p class="text-[10px] text-amber-700 font-medium">Prossima apertura: {{ data.next_open }}</p>
+        </div>
+        {% endif %}
     </div>
 
 </div>
 
 <!-- Footer -->
-<div class="text-center py-4 mt-2">
-    <p class="text-[10px] text-gray-400">Last update: {{ data.timestamp }} <span id="refresh-status"></span></p>
-    <p class="text-[9px] text-gray-400 mt-0.5">Auto-refresh 30s</p>
+<div class="text-center py-5 mt-2">
+    <p class="text-[10px] text-gray-300 font-medium">Ultimo aggiornamento: {{ data.timestamp }} <span id="refresh-status"></span></p>
+    <p class="text-[9px] text-gray-300 mt-0.5">Auto-refresh ogni 30s</p>
 </div>
 
 <script>
@@ -337,8 +448,8 @@ async function refreshData() {
             const d = await r.json();
             if (d.success) { st.textContent = ''; location.reload(); return; }
         }
-        st.textContent = 'err';
-    } catch(e) { st.textContent = 'err'; }
+        st.textContent = 'errore';
+    } catch(e) { st.textContent = 'errore'; }
     btn.classList.remove('animate-spin');
 }
 setInterval(refreshData, 30000);
